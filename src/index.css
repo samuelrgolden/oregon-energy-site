@@ -293,11 +293,150 @@ html:not(.js-reveal) .reveal {
   font-weight: 500;
 }
 
+/* ---------- progress rail ---------- */
+.rail {
+  position: fixed;
+  right: 1.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0.4rem 0;
+}
+.rail-line {
+  position: absolute;
+  inset-block: 0;
+  width: 1px;
+  background: hsl(var(--ink) / 0.14);
+}
+.rail-pip {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 9999px;
+  background: hsl(var(--paper));
+  border: 1px solid hsl(var(--ink) / 0.35);
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+.rail-pip.on {
+  background: hsl(var(--accent));
+  border-color: hsl(var(--accent));
+  transform: scale(1.35);
+}
+.rail-temp {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: hsl(var(--accent));
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 767px) {
+  .rail { display: none; }
+}
+
+/* ---------- hero ridgeline ---------- */
+.ridge-band {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 34vh;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ridge-drift {
+  width: 200%;
+  height: 100%;
+  animation: ridgeDrift 110s linear infinite;
+  will-change: transform;
+}
+@keyframes ridgeDrift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* ---------- scroll hint ---------- */
+.scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  color: hsl(var(--muted));
+  transition: opacity 0.5s ease;
+}
+.scroll-hint .chev {
+  animation: hintBob 2.2s ease-in-out infinite;
+}
+@keyframes hintBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+/* ---------- blur reveal (richer variant of .reveal) ---------- */
+.reveal-blur {
+  opacity: 0;
+  transform: translateY(24px);
+  filter: blur(8px);
+  transition: opacity 0.8s ease, transform 0.8s ease, filter 0.8s ease;
+}
+.reveal-blur.in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+html:not(.js-reveal) .reveal-blur {
+  animation: revealFailsafe 0.6s ease 1.2s forwards;
+}
+
+/* ---------- temperature slider ---------- */
+.temp-slider {
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, hsl(var(--accent)), #d97940);
+  outline-offset: 6px;
+  cursor: ew-resize;
+}
+.temp-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: hsl(var(--paper));
+  border: 2px solid hsl(var(--accent));
+  box-shadow: 0 2px 8px hsl(var(--ink) / 0.25);
+  transition: transform 0.15s ease;
+}
+.temp-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+.temp-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: hsl(var(--paper));
+  border: 2px solid hsl(var(--accent));
+  box-shadow: 0 2px 8px hsl(var(--ink) / 0.25);
+}
+
 /* ---------- reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
+  .reveal,
+  .reveal-blur {
     opacity: 1;
     transform: none;
+    filter: none;
     transition: none;
   }
   .lift:hover,
@@ -312,5 +451,11 @@ html:not(.js-reveal) .reveal {
   .totop {
     transition: none;
     translate: none;
+  }
+  .ridge-drift {
+    animation: none;
+  }
+  .scroll-hint .chev {
+    animation: none;
   }
 }
