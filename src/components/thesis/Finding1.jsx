@@ -90,6 +90,47 @@ function TempBandsChart() {
           );
         })}
 
+        {/* days-per-band distribution, overlaid faded on the bars — the mass
+            of the decade visibly sits left of 58°F */}
+        <g opacity="0.8" aria-hidden="true">
+          <path
+            d={
+              "M" +
+              bars
+                .map((b) => {
+                  const cx = b.x + b.w / 2;
+                  const cy = y1 - (b.days / maxDays) * (y1 - M.top - 24);
+                  return `${cx.toFixed(1)},${cy.toFixed(1)}`;
+                })
+                .join(" L")
+            }
+            fill="none"
+            stroke="hsl(var(--ink) / 0.65)"
+            strokeWidth="1.75"
+            strokeLinejoin="round"
+            strokeDasharray="1 0"
+          />
+          {bars.map((b) => (
+            <circle
+              key={`d${b.lo}`}
+              cx={b.x + b.w / 2}
+              cy={y1 - (b.days / maxDays) * (y1 - M.top - 24)}
+              r="2.5"
+              fill="hsl(var(--ink) / 0.75)"
+            />
+          ))}
+          <text
+            x={sx(47.5)}
+            y={y1 - (1 * (y1 - M.top - 24)) - 10}
+            textAnchor="middle"
+            fontSize="11"
+            fontWeight="500"
+            fill="hsl(var(--ink-soft))"
+          >
+            days spent in each band
+          </text>
+        </g>
+
         {/* 58°F comfort marker */}
         <line
           x1={sx(58)}
@@ -161,12 +202,14 @@ export default function Finding1() {
       <p className="absolute inset-x-6 top-16 text-center text-sm text-[hsl(var(--muted))] md:top-20">
         Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
       </p>
-      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-x-6 px-6 py-24 md:gap-x-10 md:px-12">
+      <div className="mx-auto w-full max-w-[1440px] px-6 py-24 md:px-12">
+        <h2 className="display text-[clamp(2rem,4.2vw,3.6rem)]">
+          <span className="text-[hsl(var(--accent))]">01</span> — {COPY.title}
+        </h2>
+        <div className="mt-10 grid grid-cols-12 gap-x-6 md:gap-x-10">
         <div className="col-span-12 md:col-span-4">
-          <p className="smallcaps">{COPY.kicker}</p>
-          <h2 className="display mt-3 text-[clamp(1.8rem,3vw,2.6rem)]">{COPY.title}</h2>
           {COPY.body.map((t, i) => (
-            <p key={i} className="body-copy mt-4 hidden text-[0.98rem] md:block">
+            <p key={i} className={`body-copy text-[0.98rem] ${i ? "mt-4 " : ""}hidden md:block`}>
               {t}
             </p>
           ))}
@@ -188,6 +231,7 @@ export default function Finding1() {
           <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
             {COPY.body[0]}
           </p>
+        </div>
         </div>
       </div>
     </section>

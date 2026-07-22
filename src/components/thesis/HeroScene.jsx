@@ -1,6 +1,30 @@
-import { PinScene, phase, ease } from "../../lib/scroll";
+import { useEffect, useState } from "react";
+import { PinScene, phase, ease, useReducedMotion } from "../../lib/scroll";
 
 const QUESTION_WORDS = "What does that do to its energy grid?".split(" ");
+
+/** scrollY, rAF-throttled, only while `active`. */
+function useExitScroll(active) {
+  const [y, setY] = useState(0);
+  useEffect(() => {
+    if (!active) return undefined;
+    let raf = 0;
+    const measure = () => {
+      raf = 0;
+      setY(Math.round(window.scrollY));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(measure);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    measure();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [active]);
+  return y;
+}
 
 const STATEMENT_2 =
   "I modeled ten years of energy demand and emissions data against climate data to answer that question";
@@ -15,15 +39,30 @@ const STATEMENT_2 =
  *   0.92–1.00  brief hold, then the pin releases into Finding 1
  */
 export default function HeroScene() {
+  const reduced = useReducedMotion();
   return (
     <PinScene id="top" heightVh={280} mobileHeightVh={190}>
-      {(p) => {
-        const reveal = phase(p, 0, 0.4);
-        const exit = ease(phase(p, 0.46, 0.6));
-        const enter2 = ease(phase(p, 0.58, 0.76));
-        const cta = ease(phase(p, 0.8, 0.92));
+      {(p, done) => (
+        <HeroFrame p={p} exitActive={done && !reduced} />
+      )}
+    </PinScene>
+  );
+}
 
-        return (
+function HeroFrame({ p, exitActive }) {
+  // after the pin releases, beat 2 drifts up faster than the page and fades
+  // (same scroll-linked exit as the sam-portfolio hero)
+  const y = useExitScroll(exitActive);
+  const vh = window.innerHeight || 900;
+  const exitOpacity = exitActive ? Math.max(0, 1 - y / (vh * 0.6)) : 1;
+  const exitDrift = exitActive ? y * 0.28 : 0;
+
+  const reveal = phase(p, 0, 0.4);
+  const exit = ease(phase(p, 0.46, 0.6));
+  const enter2 = ease(phase(p, 0.58, 0.76));
+  const cta = ease(phase(p, 0.8, 0.92));
+
+  return (
           <div className="relative flex h-full flex-col justify-center">
             <div className="w-full px-6 md:px-12">
               {/* Beat 1: statement + inline scrubbed question, full-bleed */}
@@ -50,13 +89,14 @@ export default function HeroScene() {
                 </span>
               </h1>
 
-              {/* Beat 2: what I did */}
+              {/* Beat 2: what I did — after release it drifts up and fades
+                  with scroll, like the sam-portfolio hero exit */}
               <div
                 className="absolute inset-x-6 top-1/2 md:inset-x-12"
                 style={{
-                  transform: `translateY(calc(-50% + ${70 * (1 - enter2)}px))`,
-                  opacity: enter2,
-                  pointerEvents: enter2 > 0.5 ? "auto" : "none",
+                  transform: `translateY(calc(-50% + ${(70 * (1 - enter2) - exitDrift).toFixed(1)}px))`,
+                  opacity: enter2 * exitOpacity,
+                  pointerEvents: enter2 > 0.5 && exitOpacity > 0.3 ? "auto" : "none",
                 }}
               >
                 <div className="max-w-5xl text-left">
@@ -90,8 +130,5 @@ export default function HeroScene() {
               </svg>
             </div>
           </div>
-        );
-      }}
-    </PinScene>
   );
 }

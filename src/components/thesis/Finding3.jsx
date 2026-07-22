@@ -34,8 +34,9 @@ export default function Finding3() {
           <div className="flex h-full items-center">
             <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
               <div style={{ opacity: enter, transform: `translateY(${24 * (1 - enter)}px)` }}>
-                <p className="smallcaps">{COPY.kicker}</p>
-                <h2 className="display mt-3 max-w-3xl text-[clamp(1.8rem,3.2vw,2.8rem)]">{COPY.title}</h2>
+                <h2 className="display text-[clamp(2rem,4.2vw,3.6rem)]">
+                  <span className="text-[hsl(var(--accent))]">03</span> — {COPY.title}
+                </h2>
               </div>
 
               <div className="mt-10 space-y-8">

@@ -116,7 +116,7 @@ export function PinScene({ heightVh = 300, mobileHeightVh, className = "", id, c
   return (
     <section ref={ref} id={id} className={className} style={{ height: `${h}vh` }}>
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-        {children(done ? 1 : progress)}
+        {children(done ? 1 : progress, done)}
       </div>
     </section>
   );

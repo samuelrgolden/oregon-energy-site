@@ -233,11 +233,12 @@ function Finding2Inner({ p, enter, scrubYear, year, manual, setManual, setRailDe
         className="mx-auto w-full max-w-[1440px] px-6 md:px-12"
         style={{ opacity: enter, transform: `translateY(${20 * (1 - enter)}px)` }}
       >
-        <div className="grid grid-cols-12 items-end gap-x-6 md:gap-x-10">
+        <h2 className="display text-[clamp(2rem,4.2vw,3.6rem)]">
+          <span className="text-[hsl(var(--accent))]">02</span> — {COPY.title}
+        </h2>
+        <div className="mt-6 grid grid-cols-12 items-end gap-x-6 md:gap-x-10">
           <div className="col-span-12 md:col-span-7">
-            <p className="smallcaps">{COPY.kicker}</p>
-            <h2 className="display mt-2 text-[clamp(1.8rem,3vw,2.6rem)]">{COPY.title}</h2>
-            <p className="body-copy mt-3 hidden max-w-2xl text-[0.95rem] md:block">{COPY.body}</p>
+            <p className="body-copy hidden max-w-2xl text-[0.95rem] md:block">{COPY.body}</p>
           </div>
           <div className="col-span-12 mt-4 md:col-span-5 md:mt-0">
             <div className="flex items-baseline justify-between">
