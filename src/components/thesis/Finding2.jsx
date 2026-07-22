@@ -109,7 +109,7 @@ export default function Finding2() {
   const data = scenarios.cities[city];
 
   return (
-    <PinScene id="finding-2" heightVh={520} mobileHeightVh={300}>
+    <PinScene id="finding-2" heightVh={440} mobileHeightVh={260}>
       {(p) => {
         const enter = ease(phase(p, 0, 0.06));
         const scrub = phase(p, 0.08, 0.92) * 15;
@@ -158,7 +158,7 @@ function Finding2Inner({ p, enter, scrub, delta, city, setCity, manual, setManua
   const warmBg = `color-mix(in oklab, hsl(var(--paper)), #d97940 ${(delta / 15) * 7}%)`;
 
   return (
-    <div className="flex h-full items-center transition-colors duration-300" style={{ background: warmBg }}>
+    <div className="flex h-full items-center" style={{ background: warmBg }}>
       <div
         className="mx-auto w-full max-w-[1440px] px-6 md:px-12"
         style={{ opacity: enter, transform: `translateY(${20 * (1 - enter)}px)` }}

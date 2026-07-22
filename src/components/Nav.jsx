@@ -1,5 +1,3 @@
-import { useTheme } from "../lib/useTheme";
-
 const LINKS = [
   { href: "#trends", label: "The data" },
   { href: "#cliff", label: "The cliff" },
@@ -9,8 +7,6 @@ const LINKS = [
 ];
 
 export default function Nav() {
-  const [theme, toggleTheme] = useTheme();
-
   return (
     <header className="sticky top-0 z-50 border-b border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--paper)/0.85)] backdrop-blur-md">
       <nav className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-3 md:px-12">
@@ -32,14 +28,6 @@ export default function Nav() {
             </a>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="lift rounded-full border border-[hsl(var(--ink)/0.2)] px-3.5 py-1.5 text-xs font-medium text-[hsl(var(--ink-soft))] hover:border-[hsl(var(--accent))]"
-          aria-pressed={theme === "dark"}
-        >
-          {theme === "dark" ? "Light" : "Dark"} mode
-        </button>
       </nav>
     </header>
   );

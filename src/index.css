@@ -1,46 +1,22 @@
 @import "tailwindcss";
 
 /* =========================================================
-   TOKENS — "field notes" editorial: warm paper, spruce ink,
-   one evergreen accent. Data series are fixed hex per mode
-   (validated with the dataviz six-checks script).
+   TOKENS — single theme: near-black paper, forest-green
+   accent. Data series are fixed hex (validated with the
+   dataviz six-checks script on the dark surface).
    ========================================================= */
 :root {
-  --paper: 60 20% 98%;        /* page background (≈ #fcfcfb) */
-  --paper-deep: 55 14% 94%;   /* muted panels */
-  --ink: 160 18% 9%;          /* headings, hero numbers */
-  --ink-soft: 160 9% 24%;     /* body copy */
-  --muted: 160 5% 42%;        /* captions, smallcaps */
-  --surface: 0 0% 100%;       /* cards */
-  --accent: 160 55% 26%;      /* evergreen */
-  --accent-deep: 160 60% 17%;
-  --accent-soft: 160 30% 91%;
+  --paper: 0 0% 4%;           /* page background (≈ #0a0a0a) */
+  --paper-deep: 0 0% 9%;      /* muted panels */
+  --ink: 150 8% 94%;          /* headings, hero numbers */
+  --ink-soft: 150 5% 78%;     /* body copy */
+  --muted: 150 3% 58%;        /* captions, smallcaps */
+  --surface: 0 0% 8%;         /* cards */
+  --accent: 145 50% 42%;      /* forest green */
+  --accent-deep: 145 45% 56%; /* hover/brighter accent */
+  --accent-soft: 148 30% 13%;
 
-  /* data series — light mode (validated) */
-  --c-coal: #4a3aa7;
-  --c-gas: #eb6834;
-  --c-hydro: #2a78d6;
-  --c-wind: #1baf7a;
-  --c-solar: #eda100;
-  --c-import: #e34948;
-  --c-gen: #2a78d6;
-  --c-before: #e34948;
-  --c-after: #1baf7a;
-  --chart-surface: #fcfcfb;
-  color-scheme: light;
-}
-
-:root[data-theme="dark"] {
-  --paper: 160 7% 8%;
-  --paper-deep: 160 6% 12%;
-  --ink: 150 15% 93%;
-  --ink-soft: 150 8% 76%;
-  --muted: 150 5% 58%;
-  --surface: 160 6% 11%;
-  --accent: 155 42% 55%;
-  --accent-deep: 155 45% 68%;
-  --accent-soft: 158 25% 17%;
-
+  /* data series (validated, dark surface) */
   --c-coal: #9085e9;
   --c-gas: #d95926;
   --c-hydro: #3987e5;
@@ -50,34 +26,8 @@
   --c-gen: #3987e5;
   --c-before: #e66767;
   --c-after: #199e70;
-  --chart-surface: #1a1a19;
+  --chart-surface: #141414;
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    --paper: 160 7% 8%;
-    --paper-deep: 160 6% 12%;
-    --ink: 150 15% 93%;
-    --ink-soft: 150 8% 76%;
-    --muted: 150 5% 58%;
-    --surface: 160 6% 11%;
-    --accent: 155 42% 55%;
-    --accent-deep: 155 45% 68%;
-    --accent-soft: 158 25% 17%;
-
-    --c-coal: #9085e9;
-    --c-gas: #d95926;
-    --c-hydro: #3987e5;
-    --c-wind: #199e70;
-    --c-solar: #c98500;
-    --c-import: #e66767;
-    --c-gen: #3987e5;
-    --c-before: #e66767;
-    --c-after: #199e70;
-    --chart-surface: #1a1a19;
-    color-scheme: dark;
-  }
 }
 
 body {
@@ -342,25 +292,6 @@ html:not(.js-reveal) .reveal {
   .rail { display: none; }
 }
 
-/* ---------- hero floating paths (Kokonut background-paths port) ---------- */
-.float-path {
-  stroke-dasharray: 0.55 0.45;
-  animation: floatPath 25s linear infinite;
-}
-@keyframes floatPath {
-  0% {
-    stroke-dashoffset: 0;
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.6;
-  }
-  100% {
-    stroke-dashoffset: -2;
-    opacity: 0.3;
-  }
-}
-
 /* ---------- scroll hint ---------- */
 .scroll-hint {
   position: absolute;
@@ -450,10 +381,6 @@ html:not(.js-reveal) .reveal-blur {
   .totop {
     transition: none;
     translate: none;
-  }
-  .float-path {
-    animation: none;
-    stroke-dasharray: none;
   }
   .scroll-hint .chev {
     animation: none;

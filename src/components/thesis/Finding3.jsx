@@ -23,7 +23,7 @@ export default function Finding3() {
   const structural = stats.structuralDrop;
 
   return (
-    <PinScene id="finding-3" heightVh={320} mobileHeightVh={220}>
+    <PinScene id="finding-3" heightVh={280} mobileHeightVh={200}>
       {(p) => {
         const enter = ease(phase(p, 0, 0.12));
         const bar1 = ease(phase(p, 0.12, 0.3));

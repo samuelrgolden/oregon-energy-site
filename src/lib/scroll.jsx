@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /** True when the user prefers reduced motion — scenes render their final frame. */
 export function useReducedMotion() {
@@ -35,7 +35,9 @@ export function useScrollProgress(ref, { once = true } = {}) {
       const rect = el.getBoundingClientRect();
       const vh = window.innerHeight || 900;
       const scrollable = rect.height - vh;
-      const p = scrollable <= 0 ? 1 : Math.min(Math.max(-rect.top / scrollable, 0), 1);
+      let p = scrollable <= 0 ? 1 : Math.min(Math.max(-rect.top / scrollable, 0), 1);
+      // quantize so sub-0.1% scroll deltas don't trigger React re-renders
+      p = Math.round(p * 1000) / 1000;
       if (p >= 1 && once) doneRef.current = true;
       setProgress(p);
     };
@@ -65,14 +67,22 @@ export function useScrollProgress(ref, { once = true } = {}) {
 /**
  * A pinned scene: a track `heightVh` tall whose inner viewport-sized frame
  * sticks while the reader scrolls through it. `children` is a function of
- * progress (0..1). Under reduced motion the track collapses to one viewport
- * and children get progress 1 (final frame, no pin).
+ * progress (0..1).
+ *
+ * Once progress hits 1 the scene is SPENT: the track collapses to a single
+ * viewport (scroll position compensated in the same frame, so nothing jumps)
+ * and the scene holds its final frame forever. Scrolling back over it is
+ * plain document scrolling — no re-pin, no replay, no dead distance.
+ *
+ * Under reduced motion every scene renders spent from the start.
  */
 export function PinScene({ heightVh = 300, mobileHeightVh, className = "", id, children }) {
   const ref = useRef(null);
   const reduced = useReducedMotion();
   const progress = useScrollProgress(ref);
   const [narrow, setNarrow] = useState(() => window.innerWidth < 768);
+  const [spent, setSpent] = useState(false);
+  const pendingCollapse = useRef(0);
 
   useEffect(() => {
     const onResize = () => setNarrow(window.innerWidth < 768);
@@ -80,12 +90,31 @@ export function PinScene({ heightVh = 300, mobileHeightVh, className = "", id, c
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const h = reduced ? 100 : narrow && mobileHeightVh ? mobileHeightVh : heightVh;
+  // Mark spent the moment the scene completes, remembering how much track
+  // height is about to disappear.
+  useLayoutEffect(() => {
+    if (spent || reduced || progress < 1) return;
+    const el = ref.current;
+    if (el) pendingCollapse.current = el.offsetHeight - window.innerHeight;
+    setSpent(true);
+  }, [progress, spent, reduced]);
+
+  // After the collapse renders, pull the viewport up by the removed height —
+  // the sticky frame lands exactly where it already was, seamlessly.
+  useLayoutEffect(() => {
+    if (spent && pendingCollapse.current > 0) {
+      window.scrollBy(0, -pendingCollapse.current);
+      pendingCollapse.current = 0;
+    }
+  }, [spent]);
+
+  const done = reduced || spent;
+  const h = done ? 100 : narrow && mobileHeightVh ? mobileHeightVh : heightVh;
 
   return (
     <section ref={ref} id={id} className={className} style={{ height: `${h}vh` }}>
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
-        {children(reduced ? 1 : progress)}
+        {children(done ? 1 : progress)}
       </div>
     </section>
   );

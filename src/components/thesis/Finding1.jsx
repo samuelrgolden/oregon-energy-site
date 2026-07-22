@@ -44,6 +44,16 @@ function UCurveChart({ p }) {
     () => linePath(ucurve.temps, ucurve.curveGWh, sx, sy),
     [W] // eslint-disable-line react-hooks/exhaustive-deps
   );
+  // ~1,900 dots: memoized so scroll-driven re-renders reuse the same elements
+  const scatterEls = useMemo(
+    () =>
+      ucurve.scatter.map(([t, d], i) =>
+        d < dLo || d > dHi ? null : (
+          <circle key={i} cx={sx(t)} cy={sy(d)} r="2.2" fill="var(--c-hydro)" opacity="0.4" />
+        )
+      ),
+    [W] // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const pathLen = pathRef.current?.getTotalLength?.() ?? 1400;
 
   const onMove = (e) => {
@@ -72,13 +82,7 @@ function UCurveChart({ p }) {
             {t}°F
           </text>
         ))}
-        <g opacity={scatterIn * 0.85}>
-          {ucurve.scatter.map(([t, d], i) =>
-            d < dLo || d > dHi ? null : (
-              <circle key={i} cx={sx(t)} cy={sy(d)} r="2.2" fill="var(--c-hydro)" opacity="0.4" />
-            )
-          )}
-        </g>
+        <g opacity={scatterIn * 0.85}>{scatterEls}</g>
         <path
           ref={pathRef}
           d={curveD}
@@ -116,7 +120,7 @@ function UCurveChart({ p }) {
 
 export default function Finding1() {
   return (
-    <PinScene id="finding-1" heightVh={220} mobileHeightVh={160}>
+    <PinScene id="finding-1" heightVh={180} mobileHeightVh={140}>
       {(p) => {
         const enter = ease(phase(p, 0, 0.18));
         return (

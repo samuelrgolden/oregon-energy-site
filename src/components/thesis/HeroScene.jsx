@@ -1,5 +1,4 @@
 import { PinScene, phase, ease } from "../../lib/scroll";
-import BackgroundPaths from "./BackgroundPaths";
 
 const QUESTION_WORDS = "What does that actually do to its grid?".split(" ");
 
@@ -11,53 +10,51 @@ const ANSWER = [
 ];
 
 /**
- * Scene 1 (pinned, ~320vh):
- *   0.00–0.42  "Oregon is warming." holds; the question reveals word by word
- *   0.46–0.60  both slide up and fade
- *   0.58–0.82  the answer paragraph slides up into view
- *   0.82–1.00  hold, then the pin releases
+ * Scene 1 (pinned):
+ *   0.00–0.45  "Oregon is warming." holds; the question — inline beside it,
+ *              fully invisible at rest — reveals word by word
+ *   0.50–0.64  the whole headline slides up and fades
+ *   0.62–0.86  the answer paragraph slides up into view
+ *   0.86–1.00  brief hold, then the pin releases and the track collapses
  */
 export default function HeroScene() {
   return (
-    <PinScene id="top" heightVh={320} mobileHeightVh={220}>
+    <PinScene id="top" heightVh={280} mobileHeightVh={190}>
       {(p) => {
-        const reveal = phase(p, 0, 0.42);
-        const exit = ease(phase(p, 0.46, 0.6));
-        const answer = ease(phase(p, 0.58, 0.82));
+        const reveal = phase(p, 0, 0.45);
+        const exit = ease(phase(p, 0.5, 0.64));
+        const answer = ease(phase(p, 0.62, 0.86));
 
         return (
           <div className="relative flex h-full flex-col justify-center">
-            <BackgroundPaths />
-
             <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
-              {/* Beat 1+2: statement + scrubbed question */}
-              <div
+              {/* Beat 1: statement + inline scrubbed question */}
+              <h1
+                className="display text-[clamp(2.3rem,5.8vw,5.2rem)]"
                 style={{
                   transform: `translateY(${-60 * exit}px)`,
                   opacity: 1 - exit,
                 }}
               >
-                <h1 className="display text-[clamp(2.6rem,7vw,6rem)]">
-                  Oregon is warming.
-                </h1>
-                <p
-                  className="serif mt-4 text-[clamp(1.6rem,3.6vw,3rem)] italic leading-snug text-[hsl(var(--accent))]"
+                Oregon is warming.{" "}
+                <span
+                  className="italic text-[hsl(var(--accent))]"
                   aria-label="What does that actually do to its grid?"
                 >
                   {QUESTION_WORDS.map((w, i) => {
                     const wp = phase(reveal, i / QUESTION_WORDS.length, (i + 1) / QUESTION_WORDS.length);
                     return (
-                      <span key={i} aria-hidden="true" style={{ opacity: 0.08 + 0.92 * wp }}>
+                      <span key={i} aria-hidden="true" style={{ opacity: wp }}>
                         {w}{" "}
                       </span>
                     );
                   })}
-                </p>
-              </div>
+                </span>
+              </h1>
 
-              {/* Beat 3: the answer */}
+              {/* Beat 2: the answer */}
               <div
-                className="absolute inset-x-6 top-1/2 -translate-y-1/2 md:inset-x-12"
+                className="absolute inset-x-6 top-1/2 md:inset-x-12"
                 style={{
                   transform: `translateY(calc(-50% + ${70 * (1 - answer)}px))`,
                   opacity: answer,
