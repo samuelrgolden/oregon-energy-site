@@ -181,7 +181,9 @@ export function ProgressRail({ sections, children }) {
             title={s.label}
           >
             {i === active && delta != null && (
-              <span className="rail-temp">+{delta.toFixed(1)}°F</span>
+              <span className="rail-temp">
+                {typeof delta === "string" ? delta : `+${delta.toFixed(1)}°F`}
+              </span>
             )}
           </a>
         ))}
