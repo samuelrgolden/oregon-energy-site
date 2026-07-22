@@ -1,9 +1,9 @@
 import { PinScene, phase, ease } from "../../lib/scroll";
 
-const QUESTION_WORDS = "What does that actually do to its grid?".split(" ");
+const QUESTION_WORDS = "What does that do to its energy grid?".split(" ");
 
 const STATEMENT_2 =
-  "I modeled ten years of PACW demand and emissions against climate data to answer that question";
+  "I modeled ten years of energy demand and emissions data against climate data to answer that question";
 
 /**
  * Scene 1 (pinned):

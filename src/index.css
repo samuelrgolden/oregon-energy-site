@@ -40,6 +40,9 @@ body {
 
 html {
   scroll-behavior: smooth;
+  /* the pin engine compensates collapse shifts itself — the browser's
+     scroll anchoring would double-correct and cause jumps */
+  overflow-anchor: none;
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

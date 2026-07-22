@@ -100,10 +100,12 @@ export function PinScene({ heightVh = 300, mobileHeightVh, className = "", id, c
   }, [progress, spent, reduced]);
 
   // After the collapse renders, pull the viewport up by the removed height —
-  // the sticky frame lands exactly where it already was, seamlessly.
+  // the sticky frame lands exactly where it already was. MUST be instant:
+  // the page's scroll-behavior:smooth would otherwise animate this correction
+  // as a visible lurch.
   useLayoutEffect(() => {
     if (spent && pendingCollapse.current > 0) {
-      window.scrollBy(0, -pendingCollapse.current);
+      window.scrollBy({ top: -pendingCollapse.current, behavior: "instant" });
       pendingCollapse.current = 0;
     }
   }, [spent]);
