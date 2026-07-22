@@ -57,8 +57,8 @@ export default function ThesisFooter() {
         </div>
         <div className="rule mt-10" />
         <p className="mt-4 text-xs text-[hsl(var(--muted))]">
-          Set in Fraunces &amp; Inter. The ridgelines behind the title are ten years of real
-          PACW demand. No chart library, no server, no tracking.
+          Set in Fraunces &amp; Inter. Background paths after Kokonut UI. No chart library,
+          no server, no tracking.
         </p>
       </div>
     </footer>

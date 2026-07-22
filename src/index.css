@@ -342,24 +342,23 @@ html:not(.js-reveal) .reveal {
   .rail { display: none; }
 }
 
-/* ---------- hero ridgeline ---------- */
-.ridge-band {
-  position: absolute;
-  inset-inline: 0;
-  bottom: 0;
-  height: 34vh;
-  pointer-events: none;
-  overflow: hidden;
+/* ---------- hero floating paths (Kokonut background-paths port) ---------- */
+.float-path {
+  stroke-dasharray: 0.55 0.45;
+  animation: floatPath 25s linear infinite;
 }
-.ridge-drift {
-  width: 200%;
-  height: 100%;
-  animation: ridgeDrift 110s linear infinite;
-  will-change: transform;
-}
-@keyframes ridgeDrift {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+@keyframes floatPath {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    stroke-dashoffset: -2;
+    opacity: 0.3;
+  }
 }
 
 /* ---------- scroll hint ---------- */
@@ -452,8 +451,9 @@ html:not(.js-reveal) .reveal-blur {
     transition: none;
     translate: none;
   }
-  .ridge-drift {
+  .float-path {
     animation: none;
+    stroke-dasharray: none;
   }
   .scroll-hint .chev {
     animation: none;

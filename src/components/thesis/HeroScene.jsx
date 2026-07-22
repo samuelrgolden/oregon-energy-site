@@ -1,5 +1,5 @@
 import { PinScene, phase, ease } from "../../lib/scroll";
-import Ridgeline from "./Ridgeline";
+import BackgroundPaths from "./BackgroundPaths";
 
 const QUESTION_WORDS = "What does that actually do to its grid?".split(" ");
 
@@ -27,7 +27,7 @@ export default function HeroScene() {
 
         return (
           <div className="relative flex h-full flex-col justify-center">
-            <Ridgeline />
+            <BackgroundPaths />
 
             <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
               {/* Beat 1+2: statement + scrubbed question */}
