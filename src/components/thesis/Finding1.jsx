@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import tempbands from "../../data/tempbands.json";
-import { PinScene, phase, ease } from "../../lib/scroll";
 import { scaleLinear, niceTicks, fmtNum, useMeasure } from "../../charts/utils";
 import { YAxis, TableView } from "../../charts/Frame";
 
@@ -16,7 +15,7 @@ the decade's days sat on the cold side of ${tempbands.baseTempF}°F, against
 ${fmtNum(tempbands.hotDays)} on the hot side. Expensive days, most of the year. So the
 first effect of warming is relief — fewer degrees of heating to supply.`,
   ],
-  hint: "Bars rise as you scroll — hover any band for exact numbers.",
+  hint: "Hover any band for exact numbers.",
 };
 
 const H = 380;
@@ -25,7 +24,7 @@ const M = { top: 28, right: 20, bottom: 6, left: 58 };
 const COLD = "hsl(var(--accent))";
 const HOT = "var(--c-solar)";
 
-function TempBandsChart({ p }) {
+function TempBandsChart() {
   const [ref, width] = useMeasure();
   const [hover, setHover] = useState(null);
 
@@ -42,17 +41,13 @@ function TempBandsChart({ p }) {
   const sy = scaleLinear([0, hi * 1.08], [y1, M.top]);
   const gap = 3;
 
-  const countIn = ease(phase(p, 0.5, 0.72));
-  const totalsIn = ease(phase(p, 0.74, 0.9));
-
   const bars = useMemo(
     () =>
-      bands.map((b, i) => ({
+      bands.map((b) => ({
         ...b,
         x: sx(b.lo) + gap / 2,
         w: sx(b.hi) - sx(b.lo) - gap,
         cold: (b.lo + b.hi) / 2 < tempbands.baseTempF,
-        grow: (pp) => ease(phase(pp, 0.1 + i * 0.018, 0.42 + i * 0.018)),
       })),
     [W] // eslint-disable-line react-hooks/exhaustive-deps
   );
@@ -78,8 +73,7 @@ function TempBandsChart({ p }) {
 
         {/* demand bars */}
         {bars.map((b, i) => {
-          const g = b.grow(p);
-          const h = (y1 - sy(b.avgDemand)) * g;
+          const h = y1 - sy(b.avgDemand);
           return (
             <g key={b.lo} onPointerEnter={() => setHover(i)}>
               <rect x={b.x} width={b.w} y={M.top} height={y1 - M.top} fill="transparent" />
@@ -111,7 +105,7 @@ function TempBandsChart({ p }) {
         </text>
 
         {/* day-count strip */}
-        <g opacity={countIn}>
+        <g>
           <text x={x0 - 8} y={y1 + 34} textAnchor="end" fontSize="10.5" fill="hsl(var(--muted))">
             days
           </text>
@@ -134,14 +128,12 @@ function TempBandsChart({ p }) {
         </g>
 
         {/* totals annotation */}
-        <g opacity={totalsIn}>
-          <text x={sx(40)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={COLD}>
-            {fmtNum(tempbands.coldDays)} cold-side days
-          </text>
-          <text x={sx(74)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={HOT}>
-            {fmtNum(tempbands.hotDays)} hot-side
-          </text>
-        </g>
+        <text x={sx(40)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={COLD}>
+          {fmtNum(tempbands.coldDays)} cold-side days
+        </text>
+        <text x={sx(74)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={HOT}>
+          {fmtNum(tempbands.hotDays)} hot-side
+        </text>
       </svg>
 
       {hover != null && (
@@ -165,45 +157,39 @@ function TempBandsChart({ p }) {
 
 export default function Finding1() {
   return (
-    <PinScene id="finding-1" heightVh={180} mobileHeightVh={140}>
-      {(p) => {
-        return (
-          <div className="relative flex h-full items-center">
-            <p className="absolute inset-x-6 top-16 text-center text-sm text-[hsl(var(--muted))] md:top-20">
-              Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
+    <section id="finding-1" className="relative flex min-h-screen items-center">
+      <p className="absolute inset-x-6 top-16 text-center text-sm text-[hsl(var(--muted))] md:top-20">
+        Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
+      </p>
+      <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-x-6 px-6 py-24 md:gap-x-10 md:px-12">
+        <div className="col-span-12 md:col-span-4">
+          <p className="smallcaps">{COPY.kicker}</p>
+          <h2 className="display mt-3 text-[clamp(1.8rem,3vw,2.6rem)]">{COPY.title}</h2>
+          {COPY.body.map((t, i) => (
+            <p key={i} className="body-copy mt-4 hidden text-[0.98rem] md:block">
+              {t}
             </p>
-            <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-x-6 px-6 md:gap-x-10 md:px-12">
-              <div className="col-span-12 md:col-span-4">
-                <p className="smallcaps">{COPY.kicker}</p>
-                <h2 className="display mt-3 text-[clamp(1.8rem,3vw,2.6rem)]">{COPY.title}</h2>
-                {COPY.body.map((t, i) => (
-                  <p key={i} className="body-copy mt-4 hidden text-[0.98rem] md:block">
-                    {t}
-                  </p>
-                ))}
-                <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
-              </div>
-              <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
-                <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
-                  <TempBandsChart p={p} />
-                  <TableView
-                    caption="Average daily demand and day count by temperature band (Albany, 2015–2025)"
-                    head={["Band", "Avg demand (GWh/day)", "Days"]}
-                    rows={tempbands.bands.map((b) => [
-                      `${b.lo}–${b.hi}°F`,
-                      fmtNum(b.avgDemand, 1),
-                      fmtNum(b.days),
-                    ])}
-                  />
-                </div>
-                <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
-                  {COPY.body[0]}
-                </p>
-              </div>
-            </div>
+          ))}
+          <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+        </div>
+        <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
+          <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
+            <TempBandsChart />
+            <TableView
+              caption="Average daily demand and day count by temperature band (Albany, 2015–2025)"
+              head={["Band", "Avg demand (GWh/day)", "Days"]}
+              rows={tempbands.bands.map((b) => [
+                `${b.lo}–${b.hi}°F`,
+                fmtNum(b.avgDemand, 1),
+                fmtNum(b.days),
+              ])}
+            />
           </div>
-        );
-      }}
-    </PinScene>
+          <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
+            {COPY.body[0]}
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
