@@ -254,6 +254,43 @@ ucurve = {
 }
 
 # =====================================================================
+# Export 2b — temperature-band bars (Finding 1): avg demand + day count
+# per 5°F band of Albany daily mean temperature, from the same merged
+# dataset the models fit on.
+# =====================================================================
+hy_alb = city_data["Albany"]["hybrid_df"]
+tmean_alb = hy_alb["tmean (degrees F)"]
+demand_alb = hy_alb["Demand"] / 1000  # GWh/day
+
+edges = list(range(20, 95, 5))
+bands = []
+for lo_e in edges:
+    hi_e = lo_e + 5
+    if lo_e == edges[0]:
+        mask = tmean_alb < hi_e
+    elif lo_e == edges[-1]:
+        mask = tmean_alb >= lo_e
+    else:
+        mask = (tmean_alb >= lo_e) & (tmean_alb < hi_e)
+    n = int(mask.sum())
+    if n == 0:
+        continue
+    bands.append({
+        "lo": lo_e, "hi": hi_e,
+        "avgDemand": round(float(demand_alb[mask].mean()), 1),
+        "days": n,
+    })
+
+tempbands = {
+    "bands": bands,
+    "baseTempF": 58,
+    "coldDays": int((tmean_alb < 58).sum()),
+    "hotDays": int((tmean_alb > 58).sum()),
+    "totalDays": int(len(tmean_alb)),
+}
+print(f"tempbands: {len(bands)} bands, cold {tempbands['coldDays']} vs hot {tempbands['hotDays']}")
+
+# =====================================================================
 # Export 3 — carbon-lopsided evaluation (Figure 6.2)
 # =====================================================================
 lopsided = {}
@@ -319,6 +356,7 @@ thesis_stats = {
 }
 
 for name, obj in [("scenarios", scenarios), ("ucurve", ucurve),
+                  ("tempbands", tempbands),
                   ("lopsided", lopsided), ("ridgeline", {"ridges": ridges}),
                   ("thesisStats", thesis_stats)]:
     path = OUT / f"{name}.json"

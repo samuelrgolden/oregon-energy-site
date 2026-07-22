@@ -1,114 +1,162 @@
-import { useMemo, useRef, useState } from "react";
-import ucurve from "../../data/ucurve.json";
+import { useMemo, useState } from "react";
+import tempbands from "../../data/tempbands.json";
 import { PinScene, phase, ease } from "../../lib/scroll";
-import { scaleLinear, niceTicks, fmtNum, linePath } from "../../charts/utils";
-import { YAxis } from "../../charts/Frame";
-import { useMeasure } from "../../charts/utils";
+import { scaleLinear, niceTicks, fmtNum, useMeasure } from "../../charts/utils";
+import { YAxis, TableView } from "../../charts/Frame";
 
 const COPY = {
   kicker: "Finding 01",
   title: "Oregon's grid is heating-dominated.",
   body: [
-    `Oregon heats with electricity far more than it cools. Across ten years, the grid spent
-half again as many days on the cold side of the 58°F comfort point as the hot side —
-so the first effect of warming is relief: fewer degrees of heating to supply.`,
+    `Each bar is a temperature band: how much electricity an average day in that band
+demands. Cold days tower over hot ones — a 22°F day works the grid nearly twice as
+hard as a 62°F one — because Oregon heats with electricity far more than it cools.`,
+    `And the strip below shows where Oregon actually lives: ${fmtNum(tempbands.coldDays)} of
+the decade's days sat on the cold side of ${tempbands.baseTempF}°F, against
+${fmtNum(tempbands.hotDays)} on the hot side. Expensive days, most of the year. So the
+first effect of warming is relief — fewer degrees of heating to supply.`,
   ],
-  hint: "Chart redesign in progress — energy use by temperature band.",
+  hint: "Bars rise as you scroll — hover any band for exact numbers.",
 };
 
-const H = 440;
-const M = { top: 28, right: 20, bottom: 34, left: 58 };
+const H = 380;
+const STRIP_H = 96;
+const M = { top: 28, right: 20, bottom: 6, left: 58 };
+const COLD = "hsl(var(--accent))";
+const HOT = "var(--c-solar)";
 
-function UCurveChart({ p }) {
+function TempBandsChart({ p }) {
   const [ref, width] = useMeasure();
   const [hover, setHover] = useState(null);
-  const pathRef = useRef(null);
 
   const W = Math.max(width, 320);
   const x0 = M.left;
   const x1 = W - M.right;
   const y1 = H - M.bottom;
 
-  const dLo = 40, dHi = 85; // GWh/day window (clips a few extreme days for shape clarity)
-  const sx = scaleLinear([18, 102], [x0, x1]);
-  const sy = scaleLinear([dLo, dHi], [y1, M.top]);
+  const bands = tempbands.bands;
+  const hi = Math.max(...bands.map((b) => b.avgDemand));
+  const maxDays = Math.max(...bands.map((b) => b.days));
 
-  const scatterIn = ease(phase(p, 0.05, 0.4));
-  const drawIn = phase(p, 0.25, 0.75);
-  const markerIn = ease(phase(p, 0.8, 0.95));
+  const sx = scaleLinear([bands[0].lo, bands.at(-1).hi], [x0, x1]);
+  const sy = scaleLinear([0, hi * 1.08], [y1, M.top]);
+  const gap = 3;
 
-  const curveD = useMemo(
-    () => linePath(ucurve.temps, ucurve.curveGWh, sx, sy),
-    [W] // eslint-disable-line react-hooks/exhaustive-deps
-  );
-  // ~1,900 dots: memoized so scroll-driven re-renders reuse the same elements
-  const scatterEls = useMemo(
+  const countIn = ease(phase(p, 0.5, 0.72));
+  const totalsIn = ease(phase(p, 0.74, 0.9));
+
+  const bars = useMemo(
     () =>
-      ucurve.scatter.map(([t, d], i) =>
-        d < dLo || d > dHi ? null : (
-          <circle key={i} cx={sx(t)} cy={sy(d)} r="2.2" fill="var(--c-hydro)" opacity="0.4" />
-        )
-      ),
+      bands.map((b, i) => ({
+        ...b,
+        x: sx(b.lo) + gap / 2,
+        w: sx(b.hi) - sx(b.lo) - gap,
+        cold: (b.lo + b.hi) / 2 < tempbands.baseTempF,
+        grow: (pp) => ease(phase(pp, 0.1 + i * 0.018, 0.42 + i * 0.018)),
+      })),
     [W] // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const pathLen = pathRef.current?.getTotalLength?.() ?? 1400;
-
-  const onMove = (e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const t = sx.invert(e.clientX - rect.left);
-    if (t < 20 || t > 100) return setHover(null);
-    setHover(Math.round(t));
-  };
-
-  const hoverY = hover != null ? ucurve.curveGWh[hover - 20] : null;
 
   return (
     <div ref={ref} className="relative">
       <svg
         width="100%"
-        height={H}
-        viewBox={`0 0 ${W} ${H}`}
+        height={H + STRIP_H}
+        viewBox={`0 0 ${W} ${H + STRIP_H}`}
         role="img"
-        aria-label="Daily demand versus temperature in Albany: a U-shaped curve with its minimum near 58 degrees Fahrenheit and a steeper cold side."
-        onPointerMove={onMove}
+        aria-label={`Average daily demand by temperature band in Albany: about 81 gigawatt-hours below 25 degrees falling to about 45 near 60, rising again in the 80s — with ${fmtNum(tempbands.coldDays)} days of the decade below 58 degrees versus ${fmtNum(tempbands.hotDays)} above.`}
         onPointerLeave={() => setHover(null)}
       >
-        <YAxis ticks={niceTicks(dLo, dHi, 4)} sy={sy} x0={x0} x1={x1} unit="GWh / day" />
-        {[20, 40, 58, 80, 100].map((t) => (
-          <text key={t} x={sx(t)} y={y1 + 20} textAnchor="middle" fontSize="11" fill="hsl(var(--muted))" aria-hidden="true">
-            {t}°F
-          </text>
-        ))}
-        <g opacity={scatterIn * 0.85}>{scatterEls}</g>
-        <path
-          ref={pathRef}
-          d={curveD}
-          fill="none"
-          stroke="hsl(var(--accent))"
-          strokeWidth="2.75"
-          strokeLinecap="round"
-          strokeDasharray={pathLen}
-          strokeDashoffset={pathLen * (1 - drawIn)}
+        <YAxis ticks={niceTicks(0, hi * 1.08, 4)} sy={sy} x0={x0} x1={x1} unit="GWh / day" />
+        {bands.map((b) =>
+          b.lo % 10 === 0 ? (
+            <text key={b.lo} x={sx(b.lo)} y={y1 + 16} textAnchor="middle" fontSize="11" fill="hsl(var(--muted))" aria-hidden="true">
+              {b.lo}°F
+            </text>
+          ) : null
+        )}
+
+        {/* demand bars */}
+        {bars.map((b, i) => {
+          const g = b.grow(p);
+          const h = (y1 - sy(b.avgDemand)) * g;
+          return (
+            <g key={b.lo} onPointerEnter={() => setHover(i)}>
+              <rect x={b.x} width={b.w} y={M.top} height={y1 - M.top} fill="transparent" />
+              <rect
+                x={b.x}
+                width={b.w}
+                y={y1 - h}
+                height={Math.max(h, 0.5)}
+                rx="3"
+                fill={b.cold ? COLD : HOT}
+                opacity={hover == null || hover === i ? 1 : 0.45}
+              />
+            </g>
+          );
+        })}
+
+        {/* 58°F comfort marker */}
+        <line
+          x1={sx(58)}
+          x2={sx(58)}
+          y1={M.top - 6}
+          y2={y1 + STRIP_H - 14}
+          stroke="hsl(var(--ink) / 0.5)"
+          strokeWidth="1"
+          strokeDasharray="4 4"
         />
-        {/* comfort-point marker */}
-        <g opacity={markerIn} style={{ transform: `scale(${0.6 + 0.4 * markerIn})`, transformOrigin: `${sx(58)}px ${sy(ucurve.curveGWh[38])}px` }}>
-          <line x1={sx(58)} x2={sx(58)} y1={sy(ucurve.curveGWh[38])} y2={y1} stroke="hsl(var(--accent))" strokeWidth="1" strokeDasharray="3 4" />
-          <circle cx={sx(58)} cy={sy(ucurve.curveGWh[38])} r="5" fill="hsl(var(--accent))" stroke="var(--chart-surface)" strokeWidth="2" />
-          <text x={sx(58)} y={y1 - 8} textAnchor="middle" fontSize="11.5" fontWeight="600" fill="hsl(var(--accent))">
-            58°F — the comfort point
+        <text x={sx(58)} y={M.top - 12} textAnchor="middle" fontSize="11" fontWeight="600" fill="hsl(var(--ink-soft))">
+          58°F
+        </text>
+
+        {/* day-count strip */}
+        <g opacity={countIn}>
+          <text x={x0 - 8} y={y1 + 34} textAnchor="end" fontSize="10.5" fill="hsl(var(--muted))">
+            days
+          </text>
+          {bars.map((b, i) => {
+            const ch = (b.days / maxDays) * (STRIP_H - 40);
+            return (
+              <rect
+                key={b.lo}
+                x={b.x}
+                width={b.w}
+                y={y1 + 26 + (STRIP_H - 40) - ch}
+                height={Math.max(ch, 1)}
+                rx="2"
+                fill={b.cold ? COLD : HOT}
+                opacity={(hover == null || hover === i ? 1 : 0.45) * 0.45}
+                onPointerEnter={() => setHover(i)}
+              />
+            );
+          })}
+        </g>
+
+        {/* totals annotation */}
+        <g opacity={totalsIn}>
+          <text x={sx(40)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={COLD}>
+            {fmtNum(tempbands.coldDays)} cold-side days
+          </text>
+          <text x={sx(74)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={HOT}>
+            {fmtNum(tempbands.hotDays)} hot-side
           </text>
         </g>
-        {hover != null && hoverY != null && (
-          <circle cx={sx(hover)} cy={sy(hoverY)} r="4.5" fill="hsl(var(--accent))" stroke="var(--chart-surface)" strokeWidth="2" aria-hidden="true" />
-        )}
       </svg>
-      {hover != null && hoverY != null && (
-        <div className="chart-tooltip" style={{ left: `${Math.min(Math.max((sx(hover) / W) * 100, 10), 72)}%`, top: 0 }}>
-          <div className="tt-title">{hover}°F average day</div>
-          <div>Fitted demand: {fmtNum(hoverY, 1)} GWh</div>
-          <div className="text-[hsl(var(--muted))]">
-            {hover < 58 ? `+${fmtNum(hoverY - ucurve.curveGWh[38], 1)} GWh vs a 58°F day` : hover > 58 ? `+${fmtNum(hoverY - ucurve.curveGWh[38], 1)} GWh vs a 58°F day` : "the minimum"}
+
+      {hover != null && (
+        <div
+          className="chart-tooltip"
+          style={{ left: `${Math.min(Math.max(((bars[hover].x + bars[hover].w / 2) / W) * 100, 10), 72)}%`, top: 0 }}
+        >
+          <div className="tt-title">
+            {bands[hover].lo}–{bands[hover].hi}°F days
           </div>
+          <div>
+            <span className="swatch" style={{ background: bars[hover].cold ? COLD : HOT }} />
+            Avg demand: {fmtNum(bands[hover].avgDemand, 1)} GWh/day
+          </div>
+          <div className="text-[hsl(var(--muted))]">{fmtNum(bands[hover].days)} days in ten years</div>
         </div>
       )}
     </div>
@@ -136,21 +184,18 @@ export default function Finding1() {
                 ))}
                 <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
               </div>
-              <div
-                className="col-span-12 mt-6 md:col-span-8 md:mt-0"
-                style={{ opacity: enter }}
-              >
-                {/* PLACEHOLDER — replacing the U-curve with a bar chart of
-                    energy use by temperature band (numbers from the thesis
-                    notebooks). UCurveChart is kept below for reference. */}
-                <div className="flex min-h-[440px] items-center justify-center rounded-2xl border border-dashed border-[hsl(var(--ink)/0.25)] bg-[hsl(var(--surface))] p-8">
-                  <div className="text-center">
-                    <p className="smallcaps">Chart placeholder</p>
-                    <p className="mt-3 max-w-sm text-sm leading-relaxed text-[hsl(var(--muted))]">
-                      Energy usage by temperature band — bar chart, cold side vs hot side.
-                      Being redesigned from the thesis numbers.
-                    </p>
-                  </div>
+              <div className="col-span-12 mt-6 md:col-span-8 md:mt-0" style={{ opacity: enter }}>
+                <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
+                  <TempBandsChart p={p} />
+                  <TableView
+                    caption="Average daily demand and day count by temperature band (Albany, 2015–2025)"
+                    head={["Band", "Avg demand (GWh/day)", "Days"]}
+                    rows={tempbands.bands.map((b) => [
+                      `${b.lo}–${b.hi}°F`,
+                      fmtNum(b.avgDemand, 1),
+                      fmtNum(b.days),
+                    ])}
+                  />
                 </div>
                 <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
                   {COPY.body[0]}
