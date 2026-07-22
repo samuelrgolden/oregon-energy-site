@@ -2,35 +2,33 @@ import { PinScene, phase, ease } from "../../lib/scroll";
 
 const QUESTION_WORDS = "What does that actually do to its grid?".split(" ");
 
-const ANSWER = [
-  { text: "I modeled ten years of PACW demand and emissions against climate data, then turned the temperature up 15 degrees. The answer: warming barely moves the needle — and the biggest " },
-  { text: "climate win", accent: true },
-  { text: " on the books turned out to be an " },
-  { text: "accounting trick.", accent: true },
-];
+const STATEMENT_2 =
+  "I modeled ten years of PACW demand and emissions against climate data to project forward through time";
 
 /**
  * Scene 1 (pinned):
- *   0.00–0.45  "Oregon is warming." holds; the question — inline beside it,
- *              fully invisible at rest — reveals word by word
- *   0.50–0.64  the whole headline slides up and fades
- *   0.62–0.86  the answer paragraph slides up into view
- *   0.86–1.00  brief hold, then the pin releases and the track collapses
+ *   0.00–0.40  "Oregon is warming." + inline question (invisible at rest)
+ *              revealed word by word, the pair spanning the full screen width
+ *   0.46–0.60  the headline slides up and fades
+ *   0.58–0.76  "I modeled ten years…" takes its place
+ *   0.80–0.92  "Here is what I found ↓" appears, prompting the reader on
+ *   0.92–1.00  brief hold, then the pin releases into Finding 1
  */
 export default function HeroScene() {
   return (
     <PinScene id="top" heightVh={280} mobileHeightVh={190}>
       {(p) => {
-        const reveal = phase(p, 0, 0.45);
-        const exit = ease(phase(p, 0.5, 0.64));
-        const answer = ease(phase(p, 0.62, 0.86));
+        const reveal = phase(p, 0, 0.4);
+        const exit = ease(phase(p, 0.46, 0.6));
+        const enter2 = ease(phase(p, 0.58, 0.76));
+        const cta = ease(phase(p, 0.8, 0.92));
 
         return (
           <div className="relative flex h-full flex-col justify-center">
-            <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
-              {/* Beat 1: statement + inline scrubbed question */}
+            <div className="w-full px-6 md:px-12">
+              {/* Beat 1: statement + inline scrubbed question, full-bleed */}
               <h1
-                className="display text-[clamp(2.3rem,5.8vw,5.2rem)]"
+                className="display text-center text-[clamp(1.9rem,3.05vw,4.2rem)] md:whitespace-nowrap"
                 style={{
                   transform: `translateY(${-60 * exit}px)`,
                   opacity: 1 - exit,
@@ -52,31 +50,38 @@ export default function HeroScene() {
                 </span>
               </h1>
 
-              {/* Beat 2: the answer */}
+              {/* Beat 2: what I did */}
               <div
                 className="absolute inset-x-6 top-1/2 md:inset-x-12"
                 style={{
-                  transform: `translateY(calc(-50% + ${70 * (1 - answer)}px))`,
-                  opacity: answer,
-                  pointerEvents: answer > 0.5 ? "auto" : "none",
+                  transform: `translateY(calc(-50% + ${70 * (1 - enter2)}px))`,
+                  opacity: enter2,
+                  pointerEvents: enter2 > 0.5 ? "auto" : "none",
                 }}
               >
-                <div className="mx-auto max-w-[1440px]">
-                  <p className="smallcaps mb-5">The short version</p>
-                  <p className="serif max-w-3xl text-[clamp(1.3rem,2.6vw,2.1rem)] leading-relaxed text-[hsl(var(--ink))]">
-                    {ANSWER.map((seg, i) =>
-                      seg.accent ? (
-                        <em key={i} className="text-[hsl(var(--accent))]">
-                          {seg.text}
-                        </em>
-                      ) : (
-                        <span key={i}>{seg.text}</span>
-                      )
-                    )}
+                <div className="mx-auto max-w-4xl text-center">
+                  <p className="serif text-[clamp(1.5rem,3vw,2.6rem)] leading-snug text-[hsl(var(--ink))]">
+                    {STATEMENT_2}
                   </p>
-                  <p className="mt-6 text-sm text-[hsl(var(--muted))]">
+                  <p className="mt-5 text-sm text-[hsl(var(--muted))]">
                     Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
                   </p>
+
+                  {/* Beat 3: the prompt onward */}
+                  <div
+                    className="mt-14 flex flex-col items-center gap-3"
+                    style={{
+                      opacity: cta,
+                      transform: `translateY(${24 * (1 - cta)}px)`,
+                    }}
+                  >
+                    <p className="serif text-[clamp(1.1rem,1.8vw,1.5rem)] italic text-[hsl(var(--accent))]">
+                      Here is what I found
+                    </p>
+                    <svg className="chev text-[hsl(var(--accent))]" width="20" height="12" viewBox="0 0 20 12" aria-hidden="true">
+                      <path d="M2 2l8 8 8-8" fill="none" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>

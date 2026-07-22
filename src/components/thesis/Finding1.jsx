@@ -7,16 +7,13 @@ import { useMeasure } from "../../charts/utils";
 
 const COPY = {
   kicker: "Finding 01",
-  title: "This grid runs on heating, not cooling.",
+  title: "Oregon's grid is heating-dominated.",
   body: [
-    `Every dot is one day: that day's average temperature in Albany against how much
-electricity the PACW grid delivered. The curve the model fits through them is a shallow
-U with its bottom near 58°F — and the cold side is where Oregon lives.`,
     `Oregon heats with electricity far more than it cools. Across ten years, the grid spent
-half again as many days on the cold side of that curve as the hot side. So the first
-effect of warming is relief: fewer degrees of heating to supply.`,
+half again as many days on the cold side of the 58°F comfort point as the hot side —
+so the first effect of warming is relief: fewer degrees of heating to supply.`,
   ],
-  hint: "The curve draws as you scroll — watch how much steeper the cold side climbs.",
+  hint: "Chart redesign in progress — energy use by temperature band.",
 };
 
 const H = 440;
@@ -143,8 +140,17 @@ export default function Finding1() {
                 className="col-span-12 mt-6 md:col-span-8 md:mt-0"
                 style={{ opacity: enter }}
               >
-                <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
-                  <UCurveChart p={p} />
+                {/* PLACEHOLDER — replacing the U-curve with a bar chart of
+                    energy use by temperature band (numbers from the thesis
+                    notebooks). UCurveChart is kept below for reference. */}
+                <div className="flex min-h-[440px] items-center justify-center rounded-2xl border border-dashed border-[hsl(var(--ink)/0.25)] bg-[hsl(var(--surface))] p-8">
+                  <div className="text-center">
+                    <p className="smallcaps">Chart placeholder</p>
+                    <p className="mt-3 max-w-sm text-sm leading-relaxed text-[hsl(var(--muted))]">
+                      Energy usage by temperature band — bar chart, cold side vs hot side.
+                      Being redesigned from the thesis numbers.
+                    </p>
+                  </div>
                 </div>
                 <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
                   {COPY.body[0]}
