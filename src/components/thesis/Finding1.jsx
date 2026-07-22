@@ -169,7 +169,13 @@ export default function Finding1() {
       {(p) => {
         const enter = ease(phase(p, 0, 0.18));
         return (
-          <div className="flex h-full items-center">
+          <div className="relative flex h-full items-center">
+            <p
+              className="absolute inset-x-6 top-16 text-center text-sm text-[hsl(var(--muted))] md:top-20"
+              style={{ opacity: enter }}
+            >
+              Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
+            </p>
             <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-x-6 px-6 md:gap-x-10 md:px-12">
               <div
                 className="col-span-12 md:col-span-4"

@@ -3,7 +3,7 @@ import { PinScene, phase, ease } from "../../lib/scroll";
 const QUESTION_WORDS = "What does that actually do to its grid?".split(" ");
 
 const STATEMENT_2 =
-  "I modeled ten years of PACW demand and emissions against climate data to project forward through time";
+  "I modeled ten years of PACW demand and emissions against climate data to answer that question";
 
 /**
  * Scene 1 (pinned):
@@ -28,7 +28,7 @@ export default function HeroScene() {
             <div className="w-full px-6 md:px-12">
               {/* Beat 1: statement + inline scrubbed question, full-bleed */}
               <h1
-                className="display text-center text-[clamp(1.9rem,3.05vw,4.2rem)] md:whitespace-nowrap"
+                className="display text-left text-[clamp(1.9rem,3.05vw,4.2rem)] md:whitespace-nowrap"
                 style={{
                   transform: `translateY(${-60 * exit}px)`,
                   opacity: 1 - exit,
@@ -59,26 +59,23 @@ export default function HeroScene() {
                   pointerEvents: enter2 > 0.5 ? "auto" : "none",
                 }}
               >
-                <div className="mx-auto max-w-4xl text-center">
+                <div className="max-w-5xl text-left">
                   <p className="serif text-[clamp(1.5rem,3vw,2.6rem)] leading-snug text-[hsl(var(--ink))]">
                     {STATEMENT_2}
-                  </p>
-                  <p className="mt-5 text-sm text-[hsl(var(--muted))]">
-                    Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
                   </p>
 
                   {/* Beat 3: the prompt onward */}
                   <div
-                    className="mt-14 flex flex-col items-center gap-3"
+                    className="mt-10 flex items-center gap-5"
                     style={{
                       opacity: cta,
                       transform: `translateY(${24 * (1 - cta)}px)`,
                     }}
                   >
-                    <p className="serif text-[clamp(1.1rem,1.8vw,1.5rem)] italic text-[hsl(var(--accent))]">
+                    <p className="serif text-[clamp(1.5rem,3vw,2.6rem)] italic leading-snug text-[hsl(var(--accent))]">
                       Here is what I found
                     </p>
-                    <svg className="chev text-[hsl(var(--accent))]" width="20" height="12" viewBox="0 0 20 12" aria-hidden="true">
+                    <svg className="chev mt-2 text-[hsl(var(--accent))]" width="26" height="16" viewBox="0 0 20 12" aria-hidden="true">
                       <path d="M2 2l8 8 8-8" fill="none" stroke="currentColor" strokeWidth="2" />
                     </svg>
                   </div>
