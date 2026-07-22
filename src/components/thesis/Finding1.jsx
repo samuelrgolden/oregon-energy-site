@@ -167,20 +167,13 @@ export default function Finding1() {
   return (
     <PinScene id="finding-1" heightVh={180} mobileHeightVh={140}>
       {(p) => {
-        const enter = ease(phase(p, 0, 0.18));
         return (
           <div className="relative flex h-full items-center">
-            <p
-              className="absolute inset-x-6 top-16 text-center text-sm text-[hsl(var(--muted))] md:top-20"
-              style={{ opacity: enter }}
-            >
+            <p className="absolute inset-x-6 top-16 text-center text-sm text-[hsl(var(--muted))] md:top-20">
               Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
             </p>
             <div className="mx-auto grid w-full max-w-[1440px] grid-cols-12 gap-x-6 px-6 md:gap-x-10 md:px-12">
-              <div
-                className="col-span-12 md:col-span-4"
-                style={{ opacity: enter, transform: `translateY(${24 * (1 - enter)}px)` }}
-              >
+              <div className="col-span-12 md:col-span-4">
                 <p className="smallcaps">{COPY.kicker}</p>
                 <h2 className="display mt-3 text-[clamp(1.8rem,3vw,2.6rem)]">{COPY.title}</h2>
                 {COPY.body.map((t, i) => (
@@ -190,7 +183,7 @@ export default function Finding1() {
                 ))}
                 <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
               </div>
-              <div className="col-span-12 mt-6 md:col-span-8 md:mt-0" style={{ opacity: enter }}>
+              <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
                 <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
                   <TempBandsChart p={p} />
                   <TableView
