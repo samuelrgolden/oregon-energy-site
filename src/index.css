@@ -316,26 +316,13 @@ html:not(.js-reveal) .reveal {
   50% { transform: translateY(6px); }
 }
 
-/* ---------- hero lights: entrance beam + cursor pool ---------- */
-.animate-spotlight {
-  animation: spotlight 2s ease 0.75s 1 forwards;
-}
-@keyframes spotlight {
-  0% {
-    opacity: 0;
-    transform: translate(-72%, -62%) scale(0.5);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, -40%) scale(1);
-  }
-}
+/* ---------- hero light: cursor-following white pool ---------- */
 .cursor-spot {
   --sx: 50%;
   --sy: 42%;
   background: radial-gradient(
-    600px circle at var(--sx) var(--sy),
-    hsl(var(--accent) / 0.12),
+    300px circle at var(--sx) var(--sy),
+    rgba(255, 255, 255, 0.1),
     transparent 70%
   );
 }
@@ -411,10 +398,5 @@ html:not(.js-reveal) .reveal-blur {
   }
   .scroll-hint .chev {
     animation: none;
-  }
-  .animate-spotlight {
-    animation: none;
-    opacity: 1;
-    transform: translate(-50%, -40%) scale(1);
   }
 }
