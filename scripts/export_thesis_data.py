@@ -319,12 +319,14 @@ bandshift = {
     "counts": [],
     "coldDays": [],
     "hotDays": [],
+    "meanTemp": [],  # mean of the shifted daily-mean distribution, in °F
 }
 for w in shift_steps:
     shifted = tmean_alb + w
     bandshift["counts"].append(band_counts(shifted))
     bandshift["coldDays"].append(int((shifted < 58).sum()))
     bandshift["hotDays"].append(int((shifted > 58).sum()))
+    bandshift["meanTemp"].append(round(float(shifted.mean()), 2))
 
 print(f"bandshift: cold {bandshift['coldDays'][0]}→{bandshift['coldDays'][-1]}, "
       f"hot {bandshift['hotDays'][0]}→{bandshift['hotDays'][-1]} across +15°F")

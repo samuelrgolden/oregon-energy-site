@@ -39,7 +39,7 @@ function MigrationChart({ deltaT }) {
   const x1 = W - M.right;
   const y1 = H - M.bottom;
 
-  const { bands, warming, counts } = bandshift;
+  const { bands, counts, meanTemp } = bandshift;
   const maxCount = useMemo(() => Math.max(...counts.flat()), [counts]);
 
   const sx = scaleLinear([bands[0].lo, bands.at(-1).hi], [x0, x1]);
@@ -48,6 +48,7 @@ function MigrationChart({ deltaT }) {
 
   // fractional position in the 0.5°F step table (table runs to +15)
   const t = deltaT / 0.5;
+  const meanNow = lerpAt(meanTemp, t); // mean daily temperature, °F
 
   return (
     <div ref={ref}>
@@ -119,6 +120,12 @@ function MigrationChart({ deltaT }) {
         <text x={sx(58)} y={M.top - 14} textAnchor="middle" fontSize="11" fontWeight="600" fill="hsl(var(--ink-soft))">
           58°F
         </text>
+
+        {/* moving mean-temperature line — slides right toward 58°F as it warms */}
+        <line x1={sx(meanNow)} x2={sx(meanNow)} y1={M.top - 8} y2={y1} stroke="#ef4444" strokeWidth="2" />
+        <text x={sx(meanNow)} y={y1 + 32} textAnchor="middle" fontSize="11" fontWeight="700" fill="#ef4444">
+          avg {meanNow.toFixed(1)}°F
+        </text>
       </svg>
     </div>
   );
@@ -181,8 +188,9 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta 
               <p className="smallcaps mt-2 text-[hsl(var(--accent))]">{COPY.kicker}</p>
 
               <div className="mt-5 grid grid-cols-12 gap-x-6 md:gap-x-10">
-                {/* left: the why */}
-                <div className="col-span-12 md:col-span-4">
+                {/* left: the why — offset so it aligns with the graph card top,
+                    clearing the slider row on the right */}
+                <div className="col-span-12 md:col-span-4 md:mt-[2.6rem]">
                   <p className="body-copy hidden text-[0.92rem] md:block">{COPY.body}</p>
                   <p className="mt-3 hidden text-[0.75rem] text-[hsl(var(--muted))] md:block">{COPY.hint}</p>
                 </div>
