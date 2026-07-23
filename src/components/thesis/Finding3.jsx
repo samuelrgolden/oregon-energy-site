@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import bandshift from "../../data/bandshift.json";
 import scenarios from "../../data/scenarios.json";
 import { PinScene, phase, ease, useRail } from "../../lib/scroll";
@@ -135,20 +135,30 @@ function Readout({ label, value, sub, tone }) {
 }
 
 export default function Finding3() {
+  const [manual, setManual] = useState(null);
   const { setDelta: setRailDelta } = useRail();
   return (
     <PinScene id="finding-3" heightVh={500} mobileHeightVh={260}>
-      {(p) => <Finding3Inner p={p} setRailDelta={setRailDelta} />}
+      {(p) => {
+        // scrub: 8%–88% of the pin drives the sweep; hold at the end
+        const scrubDelta = phase(p, 0.08, 0.88) * MAX_W;
+        const deltaT = manual ?? scrubDelta;
+        return (
+          <Finding3Inner {...{ p, scrubDelta, deltaT, manual, setManual, setRailDelta }} />
+        );
+      }}
     </PinScene>
   );
 }
 
-function Finding3Inner({ p, setRailDelta }) {
+function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta }) {
   const alb = scenarios.cities.Albany;
   const enter = ease(phase(p, 0, 0.08));
-  // scrub: 8%–88% of the pin drives the sweep; hold at the end
-  const sweep = phase(p, 0.08, 0.88);
-  const deltaT = sweep * MAX_W;
+
+  // scroll takes over from manual whenever the scrub moves
+  useEffect(() => {
+    if (manual != null) setManual(null);
+  }, [scrubDelta]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // publish ΔT to the rail thermometer while the scene is live
   useEffect(() => {
@@ -170,41 +180,52 @@ function Finding3Inner({ p, setRailDelta }) {
               </h2>
               <p className="smallcaps mt-2 text-[hsl(var(--accent))]">{COPY.kicker}</p>
 
-              <div className="mt-8 grid grid-cols-12 gap-x-6 md:gap-x-10">
-                <div className="col-span-12 md:col-span-4">
-                  <p className="body-copy hidden text-[0.95rem] md:block">{COPY.body}</p>
-                  <p className="mt-3 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+              <div className="mt-6 grid grid-cols-12 items-end gap-x-6 md:gap-x-10">
+                <div className="col-span-12 md:col-span-7">
+                  <p className="body-copy hidden max-w-2xl text-[0.95rem] md:block">{COPY.body}</p>
+                </div>
+                <div className="col-span-12 mt-4 md:col-span-5 md:mt-0">
+                  <span className="serif text-[clamp(2.4rem,4.5vw,3.6rem)] font-medium tabular-nums text-[hsl(var(--ink))]">
+                    +{deltaT.toFixed(1)}°F
+                  </span>
+                  <input
+                    type="range"
+                    min="0"
+                    max={MAX_W}
+                    step="0.1"
+                    value={deltaT}
+                    onChange={(e) => setManual(parseFloat(e.target.value))}
+                    aria-label="Warming in degrees Fahrenheit"
+                    className="temp-slider mt-2 w-full"
+                  />
+                  <p className="mt-1 text-[0.75rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+                </div>
+              </div>
 
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    <Readout
-                      label="Warming"
-                      value={`+${deltaT.toFixed(1)}°F`}
-                      tone="text-[hsl(var(--accent))]"
-                    />
-                    <Readout label="Cold-side days" value={fmtNum(cold)} sub="of 3,739 · was 2,304" tone="text-[#60A5FA]" />
-                    <Readout label="Hot-side days" value={fmtNum(hot)} sub="was 1,435" tone="text-[#FB923C]" />
-                    <Readout
-                      label="Demand"
-                      value={`${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`}
-                      sub="barely moves"
-                    />
-                    <Readout
-                      label="CO₂"
-                      value={`${co2Pct >= 0 ? "+" : ""}${co2Pct.toFixed(1)}%`}
-                      sub="just falls"
-                      tone="text-[var(--c-after)]"
-                    />
-                  </div>
+              <div className="mt-6">
+                <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
+                  <MigrationChart deltaT={deltaT} />
                 </div>
 
-                <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
-                  <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
-                    <MigrationChart deltaT={deltaT} />
-                  </div>
-                  <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
-                    {COPY.body}
-                  </p>
+                <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <Readout label="Cold-side days" value={fmtNum(cold)} sub="of 3,739 · was 2,304" tone="text-[#60A5FA]" />
+                  <Readout label="Hot-side days" value={fmtNum(hot)} sub="was 1,435" tone="text-[#FB923C]" />
+                  <Readout
+                    label="Demand"
+                    value={`${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`}
+                    sub="barely moves"
+                  />
+                  <Readout
+                    label="CO₂"
+                    value={`${co2Pct >= 0 ? "+" : ""}${co2Pct.toFixed(1)}%`}
+                    sub="just falls"
+                    tone="text-[var(--c-after)]"
+                  />
                 </div>
+
+                <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
+                  {COPY.body}
+                </p>
               </div>
             </div>
           </div>
