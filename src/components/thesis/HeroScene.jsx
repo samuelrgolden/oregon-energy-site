@@ -1,5 +1,5 @@
 import { PinScene, phase, ease } from "../../lib/scroll";
-import AnimatedGridPattern from "./AnimatedGridPattern";
+import HeroLights from "./HeroLights";
 
 const QUESTION_WORDS = "What does that do to its energy grid?".split(" ");
 
@@ -26,7 +26,7 @@ export default function HeroScene() {
 
         return (
           <div className="relative flex h-full flex-col justify-center">
-            <AnimatedGridPattern className="hero-grid" />
+            <HeroLights />
             <div className="w-full px-6 md:px-12">
               {/* Beat 1: statement + inline scrubbed question, full-bleed */}
               <h1

@@ -316,26 +316,28 @@ html:not(.js-reveal) .reveal {
   50% { transform: translateY(6px); }
 }
 
-/* ---------- animated grid pattern (Magic UI port) ----------
-   fade in 4s → hold ~0.5s → fade out 4s, then the React onAnimationEnd
-   handler moves the cell and restarts via key remount */
-.grid-cell {
-  opacity: 0;
-  animation: gridCell 8.5s linear infinite;
+/* ---------- hero lights: entrance beam + cursor pool ---------- */
+.animate-spotlight {
+  animation: spotlight 2s ease 0.75s 1 forwards;
 }
-@keyframes gridCell {
-  0% { opacity: 0; }
-  47% { opacity: var(--max-o, 0.5); }
-  53% { opacity: var(--max-o, 0.5); }
-  100% { opacity: 0; }
+@keyframes spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-72%, -62%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -40%) scale(1);
+  }
 }
-/* demo composition: oversized, skewed, vignetted to the center */
-.hero-grid {
-  inset: -30% 0;
-  height: 200%;
-  transform: skewY(12deg);
-  mask-image: radial-gradient(640px circle at center, white, transparent);
-  -webkit-mask-image: radial-gradient(640px circle at center, white, transparent);
+.cursor-spot {
+  --sx: 50%;
+  --sy: 42%;
+  background: radial-gradient(
+    600px circle at var(--sx) var(--sy),
+    hsl(var(--accent) / 0.12),
+    transparent 70%
+  );
 }
 
 /* ---------- blur reveal (richer variant of .reveal) ---------- */
@@ -410,8 +412,9 @@ html:not(.js-reveal) .reveal-blur {
   .scroll-hint .chev {
     animation: none;
   }
-  .grid-cell {
+  .animate-spotlight {
     animation: none;
-    opacity: 0;
+    opacity: 1;
+    transform: translate(-50%, -40%) scale(1);
   }
 }
