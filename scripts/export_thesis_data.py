@@ -291,6 +291,45 @@ tempbands = {
 print(f"tempbands: {len(bands)} bands, cold {tempbands['coldDays']} vs hot {tempbands['hotDays']}")
 
 # =====================================================================
+# Export 2c — day-count migration under warming (Finding 3 rerun):
+# for each 0.5°F step of the sweep, how many of the decade's days land
+# in each 5°F band once tmean is shifted — cold days becoming hot ones.
+# =====================================================================
+shift_steps = [round(w * 0.5, 1) for w in range(0, 31)]
+band_edges = list(range(20, 95, 5))
+
+
+def band_counts(series):
+    counts = []
+    for lo_e in band_edges:
+        hi_e = lo_e + 5
+        if lo_e == band_edges[0]:
+            mask = series < hi_e
+        elif lo_e == band_edges[-1]:
+            mask = series >= lo_e
+        else:
+            mask = (series >= lo_e) & (series < hi_e)
+        counts.append(int(mask.sum()))
+    return counts
+
+
+bandshift = {
+    "bands": [{"lo": lo_e, "hi": lo_e + 5} for lo_e in band_edges],
+    "warming": shift_steps,
+    "counts": [],
+    "coldDays": [],
+    "hotDays": [],
+}
+for w in shift_steps:
+    shifted = tmean_alb + w
+    bandshift["counts"].append(band_counts(shifted))
+    bandshift["coldDays"].append(int((shifted < 58).sum()))
+    bandshift["hotDays"].append(int((shifted > 58).sum()))
+
+print(f"bandshift: cold {bandshift['coldDays'][0]}→{bandshift['coldDays'][-1]}, "
+      f"hot {bandshift['hotDays'][0]}→{bandshift['hotDays'][-1]} across +15°F")
+
+# =====================================================================
 # Export 3 — carbon-lopsided evaluation (Figure 6.2)
 # =====================================================================
 lopsided = {}
@@ -356,7 +395,7 @@ thesis_stats = {
 }
 
 for name, obj in [("scenarios", scenarios), ("ucurve", ucurve),
-                  ("tempbands", tempbands),
+                  ("tempbands", tempbands), ("bandshift", bandshift),
                   ("lopsided", lopsided), ("ridgeline", {"ridges": ridges}),
                   ("thesisStats", thesis_stats)]:
     path = OUT / f"{name}.json"

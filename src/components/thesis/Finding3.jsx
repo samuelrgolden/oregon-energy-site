@@ -1,101 +1,194 @@
-import stats from "../../data/thesisStats.json";
-import { PinScene, phase, ease } from "../../lib/scroll";
-import { fmtNum } from "../../charts/utils";
+import { useEffect, useMemo } from "react";
+import bandshift from "../../data/bandshift.json";
+import scenarios from "../../data/scenarios.json";
+import { PinScene, phase, ease, useRail } from "../../lib/scroll";
+import { scaleLinear, fmtNum, useMeasure } from "../../charts/utils";
 
 const COPY = {
-  kicker: "Finding 03",
-  title: "And none of it compares to a bookkeeping decision.",
-  climateLabel: "Deepest climate-driven emissions cut, any city, any warming level",
-  structuralLabel: "The July 2022 “coal retirement,” holding demand and weather constant",
-  twist: [
-    `Here's the thing about that second bar: the retirement never physically happened. `,
-    `On July 7, 2022, the Jim Bridger plant's output moved from PACW's ledger to PacifiCorp
-East's — a pseudo-tie accounting transfer. The units kept burning. Oregon's biggest
-"decarbonization" was a change of address.`,
-  ],
-  cta: "Read the full investigation",
+  kicker: "Wait — run that again?",
+  title: "Why: watch the cold days disappear.",
+  body: `Same model, same sweep — but this time, watch the input. Every day of the decade
+sits in a temperature band; as Oregon warms, days pour across the 58°F line from the
+expensive, dirty cold side to the cheaper, cleaner hot side. One bill shrinks while
+another grows — so demand barely moves. But the days being deleted are the dirtiest
+ones the grid has — so emissions just fall.`,
+  hint: "The outline is today's distribution; the bars are the warmed one. The sweep runs to +9°F — the top of the century's hottest path above.",
 };
 
-const BAR_MAX = 13000;
+const H = 420;
+const M = { top: 34, right: 20, bottom: 40, left: 16 };
+const COLD = "hsl(var(--accent))";
+const HOT = "var(--c-solar)";
+// cap the rerun at +9°F — the top of the century's hottest path in section
+// 02 (SSP5-8.5 by 2100). Past that the demand U turns and CO₂ rebounds,
+// which is the +15°F tail of the sweep, not the century story.
+const MAX_W = 9;
 
-export default function Finding3() {
-  const climate = stats.maxClimateDropAnyCity;
-  const structural = stats.structuralDrop;
+/** interpolate an array series at fractional index */
+function lerpAt(arr, t) {
+  const i = Math.min(Math.floor(t), arr.length - 2);
+  const f = t - i;
+  return arr[i] + (arr[i + 1] - arr[i]) * f;
+}
+
+function MigrationChart({ deltaT }) {
+  const [ref, width] = useMeasure();
+  const W = Math.max(width, 320);
+  const x0 = M.left;
+  const x1 = W - M.right;
+  const y1 = H - M.bottom;
+
+  const { bands, warming, counts } = bandshift;
+  const maxCount = useMemo(() => Math.max(...counts.flat()), [counts]);
+
+  const sx = scaleLinear([bands[0].lo, bands.at(-1).hi], [x0, x1]);
+  const sy = scaleLinear([0, maxCount * 1.06], [y1, M.top]);
+  const gap = 3;
+
+  // fractional position in the 0.5°F step table (table runs to +15)
+  const t = deltaT / 0.5;
 
   return (
-    <PinScene id="finding-3" heightVh={280} mobileHeightVh={200}>
-      {(p) => {
-        const enter = ease(phase(p, 0, 0.12));
-        const bar1 = ease(phase(p, 0.12, 0.3));
-        const bar2 = ease(phase(p, 0.42, 0.68));
-        const twist = ease(phase(p, 0.72, 0.9));
+    <div ref={ref}>
+      <svg
+        width="100%"
+        height={H}
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label={`Days per temperature band as Oregon warms by ${deltaT.toFixed(1)} degrees: cold-side days fall from 2,304 toward 1,452 at plus nine degrees while hot-side days rise from 1,435 toward 2,287.`}
+      >
+        {bands.map((b, i) => {
+          const now = lerpAt(counts.map((c) => c[i]), t);
+          const base = counts[0][i];
+          const bx = sx(b.lo) + gap / 2;
+          const bw = sx(b.hi) - sx(b.lo) - gap;
+          const cold = (b.lo + b.hi) / 2 < 58;
+          return (
+            <g key={b.lo}>
+              {/* live bar */}
+              <rect
+                x={bx}
+                width={bw}
+                y={sy(now)}
+                height={Math.max(y1 - sy(now), 0.5)}
+                rx="3"
+                fill={cold ? COLD : HOT}
+                opacity="0.9"
+              />
+              {/* ghost of today's distribution */}
+              <rect
+                x={bx}
+                width={bw}
+                y={sy(base)}
+                height={Math.max(y1 - sy(base), 0.5)}
+                rx="3"
+                fill="none"
+                stroke="hsl(var(--ink) / 0.4)"
+                strokeWidth="1"
+                strokeDasharray="3 3"
+              />
+              {b.lo % 10 === 0 && (
+                <text x={sx(b.lo)} y={y1 + 18} textAnchor="middle" fontSize="11" fill="hsl(var(--muted))" aria-hidden="true">
+                  {b.lo}°F
+                </text>
+              )}
+            </g>
+          );
+        })}
 
-        return (
+        {/* 58°F line */}
+        <line x1={sx(58)} x2={sx(58)} y1={M.top - 8} y2={y1} stroke="hsl(var(--ink) / 0.5)" strokeWidth="1" strokeDasharray="4 4" />
+        <text x={sx(58)} y={M.top - 14} textAnchor="middle" fontSize="11" fontWeight="600" fill="hsl(var(--ink-soft))">
+          58°F
+        </text>
+      </svg>
+    </div>
+  );
+}
+
+function Readout({ label, value, sub, tone }) {
+  return (
+    <div className="rounded-xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-4 py-3">
+      <p className="smallcaps text-[0.62rem]">{label}</p>
+      <p className={`serif mt-1 text-[1.55rem] leading-none tabular-nums ${tone ?? "text-[hsl(var(--ink))]"}`}>{value}</p>
+      {sub && <p className="mt-1 text-[0.7rem] text-[hsl(var(--muted))]">{sub}</p>}
+    </div>
+  );
+}
+
+export default function Finding3() {
+  const { setDelta: setRailDelta } = useRail();
+  return (
+    <PinScene id="finding-3" heightVh={500} mobileHeightVh={260}>
+      {(p) => <Finding3Inner p={p} setRailDelta={setRailDelta} />}
+    </PinScene>
+  );
+}
+
+function Finding3Inner({ p, setRailDelta }) {
+  const alb = scenarios.cities.Albany;
+  const enter = ease(phase(p, 0, 0.08));
+  // scrub: 8%–88% of the pin drives the sweep; hold at the end
+  const sweep = phase(p, 0.08, 0.88);
+  const deltaT = sweep * MAX_W;
+
+  // publish ΔT to the rail thermometer while the scene is live
+  useEffect(() => {
+    setRailDelta(p > 0.02 && p < 0.98 ? deltaT : null);
+  }, [deltaT, p, setRailDelta]);
+  useEffect(() => () => setRailDelta(null), [setRailDelta]);
+
+  const t = deltaT / 0.5; // index into the 0.5°F-step table
+  const cold = Math.round(lerpAt(bandshift.coldDays, t));
+  const hot = Math.round(lerpAt(bandshift.hotDays, t));
+  const demandPct = ((lerpAt(alb.demand, t) - alb.demand[0]) / alb.demand[0]) * 100;
+  const co2Pct = ((lerpAt(alb.co2, t) - alb.co2[0]) / alb.co2[0]) * 100;
+
+  return (
           <div className="flex h-full items-center">
-            <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12">
-              <div style={{ opacity: enter, transform: `translateY(${24 * (1 - enter)}px)` }}>
-                <h2 className="display text-[clamp(2rem,4.2vw,3.6rem)]">
-                  <span className="text-[hsl(var(--accent))]">03</span> — {COPY.title}
-                </h2>
-              </div>
+            <div className="mx-auto w-full max-w-[1440px] px-6 md:px-12" style={{ opacity: enter }}>
+              <h2 className="display text-[clamp(2rem,4.2vw,3.6rem)]">
+                <span className="text-[hsl(var(--accent))]">03</span> — {COPY.title}
+              </h2>
+              <p className="smallcaps mt-2 text-[hsl(var(--accent))]">{COPY.kicker}</p>
 
-              <div className="mt-10 space-y-8">
-                {/* climate bar */}
-                <div style={{ opacity: bar1 > 0 ? 1 : 0 }}>
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className="max-w-md text-[0.85rem] text-[hsl(var(--ink-soft))]">{COPY.climateLabel}</p>
-                    <p className="serif text-[1.6rem] tabular-nums text-[hsl(var(--ink))]" style={{ opacity: bar1 }}>
-                      −{fmtNum(climate * bar1)} <span className="text-sm text-[hsl(var(--muted))]">t/day</span>
-                    </p>
-                  </div>
-                  <div className="mt-2 h-8 w-full overflow-hidden rounded-md bg-[hsl(var(--paper-deep))]">
-                    <div
-                      className="h-full rounded-md"
-                      style={{ width: `${(climate / BAR_MAX) * 100 * bar1}%`, background: "var(--c-wind)" }}
+              <div className="mt-8 grid grid-cols-12 gap-x-6 md:gap-x-10">
+                <div className="col-span-12 md:col-span-4">
+                  <p className="body-copy hidden text-[0.95rem] md:block">{COPY.body}</p>
+                  <p className="mt-3 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <Readout
+                      label="Warming"
+                      value={`+${deltaT.toFixed(1)}°F`}
+                      tone="text-[hsl(var(--accent))]"
+                    />
+                    <Readout label="Cold-side days" value={fmtNum(cold)} sub="of 3,739 · was 2,304" tone="text-[hsl(var(--accent))]" />
+                    <Readout label="Hot-side days" value={fmtNum(hot)} sub="was 1,435" tone="text-[#d09000]" />
+                    <Readout
+                      label="Demand"
+                      value={`${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`}
+                      sub="barely moves"
+                    />
+                    <Readout
+                      label="CO₂"
+                      value={`${co2Pct >= 0 ? "+" : ""}${co2Pct.toFixed(1)}%`}
+                      sub="just falls"
+                      tone="text-[var(--c-after)]"
                     />
                   </div>
                 </div>
 
-                {/* structural bar */}
-                <div style={{ opacity: bar2 > 0 ? 1 : 0 }}>
-                  <div className="flex items-baseline justify-between gap-4">
-                    <p className="max-w-md text-[0.85rem] text-[hsl(var(--ink-soft))]">{COPY.structuralLabel}</p>
-                    <p className="serif text-[2.2rem] tabular-nums text-[hsl(var(--ink))]" style={{ opacity: bar2 }}>
-                      −{fmtNum(structural * bar2)} <span className="text-sm text-[hsl(var(--muted))]">t/day</span>
-                    </p>
+                <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
+                  <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
+                    <MigrationChart deltaT={deltaT} />
                   </div>
-                  <div className="mt-2 h-8 w-full overflow-hidden rounded-md bg-[hsl(var(--paper-deep))]">
-                    <div
-                      className="h-full rounded-md"
-                      style={{ width: `${(structural / BAR_MAX) * 100 * bar2}%`, background: "var(--c-coal)" }}
-                    />
-                  </div>
-                  <p className="mt-1.5 text-[0.75rem] text-[hsl(var(--muted))]" style={{ opacity: bar2 }}>
-                    ~{(structural / climate).toFixed(0)}× larger. Statistically dominant in every specification tested (t &gt; 48).
+                  <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
+                    {COPY.body}
                   </p>
                 </div>
               </div>
-
-              {/* the twist */}
-              <div
-                className="mt-10 max-w-3xl"
-                style={{ opacity: twist, transform: `translateY(${20 * (1 - twist)}px)` }}
-              >
-                <p className="serif text-[1.15rem] leading-relaxed text-[hsl(var(--ink))]">
-                  {COPY.twist[0]}
-                </p>
-                <p className="body-copy mt-3">{COPY.twist[1]}</p>
-                <a
-                  href="/bridger/"
-                  className="btn-flow lift mt-6 inline-block rounded-full border border-[hsl(var(--accent))] px-6 py-2.5 text-sm font-medium text-[hsl(var(--accent))] hover:text-[hsl(var(--paper))] [--flow:hsl(var(--accent))]"
-                >
-                  {COPY.cta} →
-                </a>
-              </div>
             </div>
           </div>
-        );
-      }}
-    </PinScene>
   );
 }
