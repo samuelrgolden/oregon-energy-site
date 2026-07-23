@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import bandshift from "../../data/bandshift.json";
 import scenarios from "../../data/scenarios.json";
 import { PinScene, phase, ease, useRail } from "../../lib/scroll";
@@ -133,22 +133,47 @@ function MigrationChart({ deltaT }) {
 
 function Readout({ label, value, sub, tone, more }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // close on outside click / Escape
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
   return (
-    <div className="rounded-xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-4 py-3">
-      <p className="smallcaps text-[0.62rem]">{label}</p>
-      <p className={`serif mt-1 text-[1.55rem] leading-none tabular-nums ${tone ?? "text-[hsl(var(--ink))]"}`}>{value}</p>
-      {sub && <p className="mt-1 text-[0.7rem] text-[hsl(var(--muted))]">{sub}</p>}
-      {more && (
-        <>
-          {open && <p className="mt-2 text-[0.72rem] leading-relaxed text-[hsl(var(--ink-soft))]">{more}</p>}
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="mt-2 text-[0.68rem] font-medium text-[hsl(var(--accent))] hover:text-[hsl(var(--accent-deep))]"
-          >
-            {open ? "− less" : "+ more"}
-          </button>
-        </>
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => more && setOpen((v) => !v)}
+        aria-expanded={open}
+        className={`lift-card block w-full rounded-xl border bg-[hsl(var(--surface))] px-4 py-3 text-left ${
+          open ? "border-[hsl(var(--accent))]" : "border-[hsl(var(--ink)/0.1)]"
+        } ${more ? "cursor-pointer" : "cursor-default"}`}
+      >
+        <p className="smallcaps text-[0.62rem]">{label}</p>
+        <p className={`serif mt-1 text-[1.55rem] leading-none tabular-nums ${tone ?? "text-[hsl(var(--ink))]"}`}>{value}</p>
+        {sub && <p className="mt-1 text-[0.7rem] text-[hsl(var(--muted))]">{sub}</p>}
+        {more && (
+          <p className="smallcaps mt-2 text-[0.6rem] text-[hsl(var(--accent))]">{open ? "Less −" : "More +"}</p>
+        )}
+      </button>
+
+      {/* popover — floats above the card, out of layout flow (no shift) */}
+      {more && open && (
+        <div className="pop-card absolute bottom-full left-0 z-30 mb-2 w-[min(20rem,80vw)] rounded-xl border border-[hsl(var(--accent)/0.4)] bg-[hsl(var(--surface))] p-4 shadow-[0_18px_44px_-16px_hsl(var(--ink)/0.5)]">
+          <p className="smallcaps text-[0.6rem] text-[hsl(var(--accent))]">{label}</p>
+          <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[hsl(var(--ink-soft))]">{more}</p>
+        </div>
       )}
     </div>
   );
