@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import tempbands from "../../data/tempbands.json";
 import { scaleLinear, niceTicks, fmtNum, useMeasure } from "../../charts/utils";
 import { YAxis, TableView } from "../../charts/Frame";
@@ -6,18 +6,30 @@ import { YAxis, TableView } from "../../charts/Frame";
 const COPY = {
   kicker: "Finding 01",
   title: "Oregon's grid is heating-dominated.",
-  body: [
-    `In Oregon, most days are spent below the comfort point, 
-    so energy is most often used for heating. 
-    On the graph, each bar is a temperature range, and each bar's height is energy demanded in that range. 
+  hint: "Hover any band for exact numbers.",
+  demand: {
+    body: [
+      `In Oregon, most days are spent below the comfort point,
+    so energy is most often used for heating.
+    On the graph, each bar is a temperature range, and each bar's height is energy demanded in that range.
     Cold days rise slightly over hot ones — a cold 25°F day demands more than
 a warm 80°F one. To add on, cold days are also far more abundant.`,
-    `And the strip below shows that distrubution: ${fmtNum(tempbands.coldDays)} days of
+      `And the strip below shows that distrubution: ${fmtNum(tempbands.coldDays)} days of
 the last decade sat on the cold side of ${tempbands.baseTempF}°F, against
 ${fmtNum(tempbands.hotDays)} on the hot side. Expensive days, most of the year. So the
 first effect of warming is relief — fewer cold days of heating to supply.`,
-  ],
-  hint: "Hover any band for exact numbers.",
+    ],
+  },
+  emissions: {
+    body: [
+      `The same bands, now measured in carbon. Each bar is the average CO₂ a day in that
+temperature range puts on the grid — and the shape is even more lopsided than demand.
+Cold days aren't just hungrier for power. They're dirtier.`,
+      `Oregon's cold-weather electricity leans on gas and imports, while milder days draw
+more from hydro, wind, and solar. So the coldest days carry the heaviest carbon — and,
+as the strip shows, there are far more of them.`,
+    ],
+  },
 };
 
 const H = 380;
@@ -26,27 +38,71 @@ const M = { top: 28, right: 20, bottom: 6, left: 58 };
 const COLD = "#3B82F6"; // blue-500
 const HOT = "#F97316";  // orange-500
 
-function TempBandsChart() {
+const prefersReduced = () =>
+  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Ease a value toward `target` over `ms` with a smoothstep; instant if reduced motion. */
+function useTween(target, ms = 450) {
+  const [v, setV] = useState(target);
+  const raf = useRef(0);
+  useEffect(() => {
+    if (prefersReduced()) {
+      setV(target);
+      return undefined;
+    }
+    let start;
+    const from = v;
+    const delta = target - from;
+    if (delta === 0) return undefined;
+    const step = (ts) => {
+      if (start == null) start = ts;
+      const p = Math.min((ts - start) / ms, 1);
+      const e = p * p * (3 - 2 * p);
+      setV(from + delta * e);
+      if (p < 1) raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf.current);
+  }, [target]); // eslint-disable-line react-hooks/exhaustive-deps
+  return v;
+}
+
+// forward-filled CO₂ per band (a sparse extreme band can read null)
+const CO2_VALS = (() => {
+  let last = 0;
+  return tempbands.bands.map((b) => {
+    if (b.avgCo2 != null) last = b.avgCo2;
+    return last;
+  });
+})();
+
+function TempBandsChart({ metric }) {
   const [ref, width] = useMeasure();
   const [hover, setHover] = useState(null);
+  const mix = useTween(metric === "emissions" ? 1 : 0); // 0 = demand, 1 = emissions
 
   const W = Math.max(width, 320);
   const x0 = M.left;
   const x1 = W - M.right;
   const y1 = H - M.bottom;
+  const plotH = y1 - M.top;
 
   const bands = tempbands.bands;
-  const hi = Math.max(...bands.map((b) => b.avgDemand));
   const maxDays = Math.max(...bands.map((b) => b.days));
 
+  const demandTop = Math.max(...bands.map((b) => b.avgDemand)) * 1.08;
+  const co2Top = Math.max(...CO2_VALS) * 1.08;
+
   const sx = scaleLinear([bands[0].lo, bands.at(-1).hi], [x0, x1]);
-  const sy = scaleLinear([0, hi * 1.08], [y1, M.top]);
+  const syDemand = scaleLinear([0, demandTop], [y1, M.top]);
+  const syCo2 = scaleLinear([0, co2Top], [y1, M.top]);
   const gap = 3;
 
   const bars = useMemo(
     () =>
-      bands.map((b) => ({
+      bands.map((b, i) => ({
         ...b,
+        co2: CO2_VALS[i],
         x: sx(b.lo) + gap / 2,
         w: sx(b.hi) - sx(b.lo) - gap,
         cold: (b.lo + b.hi) / 2 < tempbands.baseTempF,
@@ -61,7 +117,7 @@ function TempBandsChart() {
         height={H + STRIP_H}
         viewBox={`0 0 ${W} ${H + STRIP_H}`}
         role="img"
-        aria-label={`Average daily demand by temperature band in Albany: about 81 gigawatt-hours below 25 degrees falling to about 45 near 60, rising again in the 80s — with ${fmtNum(tempbands.coldDays)} days of the decade below 58 degrees versus ${fmtNum(tempbands.hotDays)} above.`}
+        aria-label={`Average daily ${metric} by temperature band in Albany, with ${fmtNum(tempbands.coldDays)} days of the decade below 58 degrees versus ${fmtNum(tempbands.hotDays)} above.`}
         onPointerLeave={() => setHover(null)}
       >
        <defs>
@@ -83,7 +139,14 @@ function TempBandsChart() {
           </linearGradient>
        </defs>
 
-        <YAxis ticks={niceTicks(0, hi * 1.08, 4)} sy={sy} x0={x0} x1={x1} unit="GWh / day" />
+        {/* crossfading y-axes: demand (fades out as it warms), CO₂ (fades in) */}
+        <g style={{ opacity: 1 - mix }}>
+          <YAxis ticks={niceTicks(0, demandTop, 4)} sy={syDemand} x0={x0} x1={x1} unit="GWh / day" />
+        </g>
+        <g style={{ opacity: mix }}>
+          <YAxis ticks={niceTicks(0, co2Top, 4)} sy={syCo2} x0={x0} x1={x1} unit="t / day CO₂" />
+        </g>
+
         {bands.map((b) =>
           b.lo % 10 === 0 ? (
             <text key={b.lo} x={sx(b.lo)} y={y1 + 16} textAnchor="middle" fontSize="11" fill="hsl(var(--muted))" aria-hidden="true">
@@ -92,12 +155,14 @@ function TempBandsChart() {
           ) : null
         )}
 
-        {/* demand bars */}
+        {/* bars — height morphs between the demand and CO₂ metric */}
         {bars.map((b, i) => {
-          const h = y1 - sy(b.avgDemand);
+          const fracD = b.avgDemand / demandTop;
+          const fracC = b.co2 / co2Top;
+          const h = (fracD + (fracC - fracD) * mix) * plotH;
           return (
             <g key={b.lo} onPointerEnter={() => setHover(i)}>
-              <rect x={b.x} width={b.w} y={M.top} height={y1 - M.top} fill="transparent" />
+              <rect x={b.x} width={b.w} y={M.top} height={plotH} fill="transparent" />
               <rect
                 x={b.x}
                 width={b.w}
@@ -209,7 +274,9 @@ function TempBandsChart() {
           </div>
           <div>
             <span className="swatch" style={{ background: bars[hover].cold ? COLD : HOT }} />
-            Avg demand: {fmtNum(bands[hover].avgDemand, 1)} GWh/day
+            {metric === "emissions"
+              ? `Avg CO₂: ${fmtNum(bars[hover].co2)} t/day`
+              : `Avg demand: ${fmtNum(bands[hover].avgDemand, 1)} GWh/day`}
           </div>
           <div className="text-[hsl(var(--muted))]">{fmtNum(bands[hover].days)} days in ten years</div>
         </div>
@@ -218,7 +285,32 @@ function TempBandsChart() {
   );
 }
 
+function MetricToggle({ metric, setMetric }) {
+  return (
+    <div className="inline-flex rounded-full border border-[hsl(var(--ink)/0.15)] p-0.5">
+      {["demand", "emissions"].map((m) => (
+        <button
+          key={m}
+          type="button"
+          onClick={() => setMetric(m)}
+          aria-pressed={metric === m}
+          className={`smallcaps rounded-full px-3.5 py-1 text-[0.66rem] transition-colors ${
+            metric === m
+              ? "bg-[hsl(var(--accent))] text-[hsl(var(--paper))]"
+              : "text-[hsl(var(--ink-soft))] hover:text-[hsl(var(--accent))]"
+          }`}
+        >
+          {m}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Finding1() {
+  const [metric, setMetric] = useState("demand");
+  const body = COPY[metric].body;
+
   return (
     <section id="finding-1" className="relative flex min-h-screen items-center">
       <div className="mx-auto w-full max-w-[1440px] px-6 py-24 md:px-12">
@@ -237,8 +329,8 @@ export default function Finding1() {
             </p>
           </div>
           <div className="mt-6">
-            {COPY.body.map((t, i) => (
-              <p key={i} className={`body-copy text-[0.98rem] ${i ? "mt-4 " : ""}hidden md:block`}>
+            {body.map((t, i) => (
+              <p key={`${metric}-${i}`} className={`body-copy text-[0.98rem] ${i ? "mt-4 " : ""}hidden md:block`}>
                 {t}
               </p>
             ))}
@@ -247,19 +339,26 @@ export default function Finding1() {
         </div>
         <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
           <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
-            <TempBandsChart />
+            <div className="mb-3 flex items-center justify-between">
+              <p className="smallcaps text-[0.7rem] text-[hsl(var(--muted))]">
+                Average daily {metric} by temperature
+              </p>
+              <MetricToggle metric={metric} setMetric={setMetric} />
+            </div>
+            <TempBandsChart metric={metric} />
             <TableView
-              caption="Average daily demand and day count by temperature band (Albany, 2015–2025)"
-              head={["Band", "Avg demand (GWh/day)", "Days"]}
+              caption="Average daily demand, CO₂, and day count by temperature band (Albany, 2015–2025)"
+              head={["Band", "Avg demand (GWh/day)", "Avg CO₂ (t/day)", "Days"]}
               rows={tempbands.bands.map((b) => [
                 `${b.lo}–${b.hi}°F`,
                 fmtNum(b.avgDemand, 1),
+                b.avgCo2 != null ? fmtNum(b.avgCo2) : "—",
                 fmtNum(b.days),
               ])}
             />
           </div>
           <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
-            {COPY.body[0]}
+            {body[0]}
           </p>
         </div>
         </div>

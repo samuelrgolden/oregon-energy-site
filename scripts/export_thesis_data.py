@@ -262,22 +262,36 @@ hy_alb = city_data["Albany"]["hybrid_df"]
 tmean_alb = hy_alb["tmean (degrees F)"]
 demand_alb = hy_alb["Demand"] / 1000  # GWh/day
 
+# emissions per band uses the current-regime rows only, so the temperature
+# signal isn't swamped by the mid-2022 structural change in the fuel mix
+merged_alb = city_data["Albany"]["merged_df"]
+cur = merged_alb[merged_alb["post_july_2022"] == 1]
+tmean_co2 = cur["tmean (degrees F)"]
+co2_cur = cur["CO2 Emissions Consumed"]  # already t/day
+
+
+def band_mask(series, lo_e, hi_e, edges):
+    if lo_e == edges[0]:
+        return series < hi_e
+    if lo_e == edges[-1]:
+        return series >= lo_e
+    return (series >= lo_e) & (series < hi_e)
+
+
 edges = list(range(20, 95, 5))
 bands = []
 for lo_e in edges:
     hi_e = lo_e + 5
-    if lo_e == edges[0]:
-        mask = tmean_alb < hi_e
-    elif lo_e == edges[-1]:
-        mask = tmean_alb >= lo_e
-    else:
-        mask = (tmean_alb >= lo_e) & (tmean_alb < hi_e)
+    mask = band_mask(tmean_alb, lo_e, hi_e, edges)
     n = int(mask.sum())
     if n == 0:
         continue
+    co2_mask = band_mask(tmean_co2, lo_e, hi_e, edges)
+    co2_vals = co2_cur[co2_mask]
     bands.append({
         "lo": lo_e, "hi": hi_e,
         "avgDemand": round(float(demand_alb[mask].mean()), 1),
+        "avgCo2": round(float(co2_vals.mean())) if len(co2_vals) else None,
         "days": n,
     })
 
