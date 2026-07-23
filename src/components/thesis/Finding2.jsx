@@ -8,10 +8,10 @@ const COPY = {
   kicker: "Finding 02",
   title: "Scroll the century forward.",
   body: `As you scroll, Oregon warms along three futures — the moderate, high, and very-high
-emissions pathways (SSP scenarios), each mapped through the model. Demand dips as heating
-fades, then climbs as cooling takes over. But emissions just keep sliding: warm days run
+emissions pathways (SSP scenarios), each mapped through my model. Demand dips as heating
+fades, then climbs as cooling takes over. But emissions decline consistently: warm days run
 on a cleaner mix than cold ones. The grid is carbon-lopsided.`,
-  hint: "After the scroll ride, the year is yours — drag the slider.",
+  hint: "Forecasts become more uncertain farther into the future",
 };
 
 // SSP central path + CMIP6 band endpoints at 2100 (°F above baseline),

@@ -7,13 +7,15 @@ const COPY = {
   kicker: "Finding 01",
   title: "Oregon's grid is heating-dominated.",
   body: [
-    `Each bar is a temperature band: how much electricity an average day in that band
-demands. Cold days tower over hot ones — a 22°F day works the grid nearly twice as
-hard as a 62°F one — because Oregon heats with electricity far more than it cools.`,
-    `And the strip below shows where Oregon actually lives: ${fmtNum(tempbands.coldDays)} of
-the decade's days sat on the cold side of ${tempbands.baseTempF}°F, against
+    `In Oregon, most days are spent below the comfort point, 
+    so energy is most often used for heating. 
+    On the graph, each bar is a temperature range, and each bar's height is energy demanded in that range. 
+    Cold days rise slightly over hot ones — a cold 25°F day demands more than
+a warm 80°F one. To add on, cold days are also far more abundant.`,
+    `And the strip below shows that distrubution: ${fmtNum(tempbands.coldDays)} days of
+the last decade sat on the cold side of ${tempbands.baseTempF}°F, against
 ${fmtNum(tempbands.hotDays)} on the hot side. Expensive days, most of the year. So the
-first effect of warming is relief — fewer degrees of heating to supply.`,
+first effect of warming is relief — fewer cold days of heating to supply.`,
   ],
   hint: "Hover any band for exact numbers.",
 };
@@ -21,8 +23,8 @@ first effect of warming is relief — fewer degrees of heating to supply.`,
 const H = 380;
 const STRIP_H = 96;
 const M = { top: 28, right: 20, bottom: 6, left: 58 };
-const COLD = "hsl(var(--accent))";
-const HOT = "var(--c-solar)";
+const COLD = "#3B82F6"; // blue-500
+const HOT = "#F97316";  // orange-500
 
 function TempBandsChart() {
   const [ref, width] = useMeasure();
@@ -62,6 +64,25 @@ function TempBandsChart() {
         aria-label={`Average daily demand by temperature band in Albany: about 81 gigawatt-hours below 25 degrees falling to about 45 near 60, rising again in the 80s — with ${fmtNum(tempbands.coldDays)} days of the decade below 58 degrees versus ${fmtNum(tempbands.hotDays)} above.`}
         onPointerLeave={() => setHover(null)}
       >
+       <defs>
+          <filter id="barGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <linearGradient id="coldGradient" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#1D4ED8" />
+            <stop offset="100%" stopColor="#60A5FA" />
+          </linearGradient>
+
+          <linearGradient id="hotGradient" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#EA580C" />
+            <stop offset="100%" stopColor="#FB923C" />
+          </linearGradient>
+       </defs>
+
         <YAxis ticks={niceTicks(0, hi * 1.08, 4)} sy={sy} x0={x0} x1={x1} unit="GWh / day" />
         {bands.map((b) =>
           b.lo % 10 === 0 ? (
@@ -83,8 +104,9 @@ function TempBandsChart() {
                 y={y1 - h}
                 height={Math.max(h, 0.5)}
                 rx="3"
-                fill={b.cold ? COLD : HOT}
+                fill={b.cold ? "url(#coldGradient)" : "url(#hotGradient)"}
                 opacity={hover == null || hover === i ? 1 : 0.45}
+                filter="url(#barGlow)"
               />
             </g>
           );
@@ -199,21 +221,29 @@ function TempBandsChart() {
 export default function Finding1() {
   return (
     <section id="finding-1" className="relative flex min-h-screen items-center">
-      <p className="absolute inset-x-6 top-16 text-center text-sm text-[hsl(var(--muted))] md:top-20">
-        Sam Golden · Climate and the Oregon Energy Grid · University of Oregon, 2026
-      </p>
       <div className="mx-auto w-full max-w-[1440px] px-6 py-24 md:px-12">
         <h2 className="display text-[clamp(2rem,4.2vw,3.6rem)]">
           <span className="text-[hsl(var(--accent))]">01</span> — {COPY.title}
         </h2>
         <div className="mt-10 grid grid-cols-12 gap-x-6 md:gap-x-10">
         <div className="col-span-12 md:col-span-4">
-          {COPY.body.map((t, i) => (
-            <p key={i} className={`body-copy text-[0.98rem] ${i ? "mt-4 " : ""}hidden md:block`}>
-              {t}
+          <div className="lift-card rounded-2xl border border-[hsl(var(--accent)/0.35)] bg-[hsl(var(--surface))] p-6">
+            <p className="smallcaps">Oregon's demand minimum</p>
+            <p className="serif mt-2 text-[4.5rem] leading-none text-[#3B82F6]">
+              58<span className="text-[2.2rem]">°F</span>
             </p>
-          ))}
-          <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+            <p className="mt-2 text-[0.8rem] leading-relaxed text-[hsl(var(--muted))]">
+              Oregon uses the least amount of energy at it's comfort point, 58 degrees.
+            </p>
+          </div>
+          <div className="mt-6">
+            {COPY.body.map((t, i) => (
+              <p key={i} className={`body-copy text-[0.98rem] ${i ? "mt-4 " : ""}hidden md:block`}>
+                {t}
+              </p>
+            ))}
+            <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+          </div>
         </div>
         <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
           <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">

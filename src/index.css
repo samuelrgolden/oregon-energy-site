@@ -30,6 +30,32 @@
   color-scheme: dark;
 }
 
+/* Light theme — pastel off-white. Opt-in via <html data-theme="light">;
+   dark stays the default. */
+:root[data-theme="light"] {
+  --paper: 44 36% 96%;         /* warm off-white (≈ #f7f4ec) */
+  --paper-deep: 42 28% 91%;    /* muted panels */
+  --ink: 155 22% 13%;          /* headings */
+  --ink-soft: 155 12% 27%;     /* body copy */
+  --muted: 150 8% 44%;         /* captions, smallcaps */
+  --surface: 44 45% 99%;       /* cards */
+  --accent: 145 52% 33%;       /* forest green, deepened for contrast */
+  --accent-deep: 145 55% 25%;
+  --accent-soft: 145 38% 88%;
+
+  --c-coal: #6d5fd6;
+  --c-gas: #c24a1c;
+  --c-hydro: #2f6fca;
+  --c-wind: #14855e;
+  --c-solar: #b07400;
+  --c-import: #d34b4b;
+  --c-gen: #2f6fca;
+  --c-before: #d34b4b;
+  --c-after: #14855e;
+  --chart-surface: #fbfaf5;
+  color-scheme: light;
+}
+
 body {
   background: hsl(var(--paper));
   color: hsl(var(--ink-soft));

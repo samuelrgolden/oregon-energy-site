@@ -1,3 +1,5 @@
+import ThemeToggle from "./ThemeToggle";
+
 export default function ThesisNav() {
   return (
     <header className="fixed inset-x-0 top-0 z-50">
@@ -5,12 +7,15 @@ export default function ThesisNav() {
         <a href="#top" className="serif text-lg text-[hsl(var(--ink))]">
           OR<span className="italic text-[hsl(var(--accent))]">/</span>grid
         </a>
-        <a
-          href="/bridger/"
-          className="link-wipe inline-block text-sm text-[hsl(var(--ink-soft))] hover:text-[hsl(var(--accent))]"
-        >
-          The investigation
-        </a>
+        <div className="flex items-center gap-5">
+          <a
+            href="/bridger/"
+            className="link-wipe inline-block text-sm text-[hsl(var(--ink-soft))] hover:text-[hsl(var(--accent))]"
+          >
+            The investigation
+          </a>
+          <ThemeToggle />
+        </div>
       </nav>
     </header>
   );

@@ -4,6 +4,13 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // set theme before paint — dark is the default, light is opt-in
+      try {
+        if (localStorage.getItem("or-grid-theme") === "light")
+          document.documentElement.setAttribute("data-theme", "light");
+      } catch (e) {}
+    </script>
     <title>Oregon Is Warming — What Does That Do to Its Grid?</title>
     <meta
       name="description"

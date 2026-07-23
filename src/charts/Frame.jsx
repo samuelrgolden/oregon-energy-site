@@ -27,7 +27,7 @@ export function YAxis({ ticks, sy, x0, x1, unit }) {
         </g>
       ))}
       {unit && (
-        <text x={x0 - 8} y={sy(ticks[ticks.length - 1]) - 14} textAnchor="end" fontSize="11" fill="hsl(var(--muted))">
+        <text x={2} y={sy(ticks[ticks.length - 1]) - 14} textAnchor="start" fontSize="11" fill="hsl(var(--muted))">
           {unit}
         </text>
       )}

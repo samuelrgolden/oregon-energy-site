@@ -131,12 +131,25 @@ function MigrationChart({ deltaT }) {
   );
 }
 
-function Readout({ label, value, sub, tone }) {
+function Readout({ label, value, sub, tone, more }) {
+  const [open, setOpen] = useState(false);
   return (
     <div className="rounded-xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-4 py-3">
       <p className="smallcaps text-[0.62rem]">{label}</p>
       <p className={`serif mt-1 text-[1.55rem] leading-none tabular-nums ${tone ?? "text-[hsl(var(--ink))]"}`}>{value}</p>
       {sub && <p className="mt-1 text-[0.7rem] text-[hsl(var(--muted))]">{sub}</p>}
+      {more && (
+        <>
+          {open && <p className="mt-2 text-[0.72rem] leading-relaxed text-[hsl(var(--ink-soft))]">{more}</p>}
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="mt-2 text-[0.68rem] font-medium text-[hsl(var(--accent))] hover:text-[hsl(var(--accent-deep))]"
+          >
+            {open ? "− less" : "+ more"}
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -219,19 +232,33 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta 
               </div>
 
               {/* cards row, full width */}
-              <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-                <Readout label="Cold-side days" value={fmtNum(cold)} sub="of 3,739 · was 2,304" tone="text-[#60A5FA]" />
-                <Readout label="Hot-side days" value={fmtNum(hot)} sub="was 1,435" tone="text-[#FB923C]" />
+              <div className="mt-4 grid grid-cols-2 items-start gap-3 md:grid-cols-4">
+                <Readout
+                  label="Cold-side days"
+                  value={fmtNum(cold)}
+                  sub="of 3,739 · was 2,304"
+                  tone="text-[#60A5FA]"
+                  more="Days below 58°F, when Oregon leans hardest on electric heat. Warming pushes them toward the comfort point — and off the dirty end of the dispatch mix."
+                />
+                <Readout
+                  label="Hot-side days"
+                  value={fmtNum(hot)}
+                  sub="was 1,435"
+                  tone="text-[#FB923C]"
+                  more="Days above 58°F, met by a cleaner summer stack of hydro, wind and solar. Their share climbs as the cold days migrate across the line."
+                />
                 <Readout
                   label="Demand"
                   value={`${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`}
                   sub="barely moves"
+                  more="Heating relief on the cold side roughly cancels new cooling load on the hot side, so total demand nets out close to flat — the shallow U-curve."
                 />
                 <Readout
                   label="CO₂"
                   value={`${co2Pct >= 0 ? "+" : ""}${co2Pct.toFixed(1)}%`}
                   sub="just falls"
                   tone="text-[var(--c-after)]"
+                  more="Cold days are dirtier per MWh than hot ones on this grid, so deleting them lowers emissions even while demand holds steady — the carbon-lopsided effect."
                 />
               </div>
 
