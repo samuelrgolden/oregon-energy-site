@@ -316,6 +316,28 @@ html:not(.js-reveal) .reveal {
   50% { transform: translateY(6px); }
 }
 
+/* ---------- animated grid pattern (Magic UI port) ----------
+   fade in 4s → hold ~0.5s → fade out 4s, then the React onAnimationEnd
+   handler moves the cell and restarts via key remount */
+.grid-cell {
+  opacity: 0;
+  animation: gridCell 8.5s linear infinite;
+}
+@keyframes gridCell {
+  0% { opacity: 0; }
+  47% { opacity: var(--max-o, 0.5); }
+  53% { opacity: var(--max-o, 0.5); }
+  100% { opacity: 0; }
+}
+/* demo composition: oversized, skewed, vignetted to the center */
+.hero-grid {
+  inset: -30% 0;
+  height: 200%;
+  transform: skewY(12deg);
+  mask-image: radial-gradient(640px circle at center, white, transparent);
+  -webkit-mask-image: radial-gradient(640px circle at center, white, transparent);
+}
+
 /* ---------- blur reveal (richer variant of .reveal) ---------- */
 .reveal-blur {
   opacity: 0;
@@ -387,5 +409,9 @@ html:not(.js-reveal) .reveal-blur {
   }
   .scroll-hint .chev {
     animation: none;
+  }
+  .grid-cell {
+    animation: none;
+    opacity: 0;
   }
 }
