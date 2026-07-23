@@ -17,8 +17,9 @@ ones the grid has — so emissions just fall.`,
 
 const H = 420;
 const M = { top: 34, right: 20, bottom: 40, left: 16 };
-const COLD = "hsl(var(--accent))";
-const HOT = "var(--c-solar)";
+// same palette as the Finding 1 bars
+const COLD = "#3B82F6"; // blue-500
+const HOT = "#F97316"; // orange-500
 // cap the rerun at +9°F — the top of the century's hottest path in section
 // 02 (SSP5-8.5 by 2100). Past that the demand U turns and CO₂ rebounds,
 // which is the +15°F tail of the sweep, not the century story.
@@ -57,6 +58,23 @@ function MigrationChart({ deltaT }) {
         role="img"
         aria-label={`Days per temperature band as Oregon warms by ${deltaT.toFixed(1)} degrees: cold-side days fall from 2,304 toward 1,452 at plus nine degrees while hot-side days rise from 1,435 toward 2,287.`}
       >
+        <defs>
+          <filter id="f3-barGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <linearGradient id="f3-coldGradient" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#1D4ED8" />
+            <stop offset="100%" stopColor="#60A5FA" />
+          </linearGradient>
+          <linearGradient id="f3-hotGradient" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#EA580C" />
+            <stop offset="100%" stopColor="#FB923C" />
+          </linearGradient>
+        </defs>
         {bands.map((b, i) => {
           const now = lerpAt(counts.map((c) => c[i]), t);
           const base = counts[0][i];
@@ -72,8 +90,8 @@ function MigrationChart({ deltaT }) {
                 y={sy(now)}
                 height={Math.max(y1 - sy(now), 0.5)}
                 rx="3"
-                fill={cold ? COLD : HOT}
-                opacity="0.9"
+                fill={cold ? "url(#f3-coldGradient)" : "url(#f3-hotGradient)"}
+                filter="url(#f3-barGlow)"
               />
               {/* ghost of today's distribution */}
               <rect
@@ -163,8 +181,8 @@ function Finding3Inner({ p, setRailDelta }) {
                       value={`+${deltaT.toFixed(1)}°F`}
                       tone="text-[hsl(var(--accent))]"
                     />
-                    <Readout label="Cold-side days" value={fmtNum(cold)} sub="of 3,739 · was 2,304" tone="text-[hsl(var(--accent))]" />
-                    <Readout label="Hot-side days" value={fmtNum(hot)} sub="was 1,435" tone="text-[#d09000]" />
+                    <Readout label="Cold-side days" value={fmtNum(cold)} sub="of 3,739 · was 2,304" tone="text-[#60A5FA]" />
+                    <Readout label="Hot-side days" value={fmtNum(hot)} sub="was 1,435" tone="text-[#FB923C]" />
                     <Readout
                       label="Demand"
                       value={`${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`}
