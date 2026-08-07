@@ -7,7 +7,7 @@ import { scaleLinear, fmtNum, useMeasure } from "../../charts/utils";
 const COPY = {
   kicker: "scroll one more time",
   title: "Why? Watch the cold days disappear.",
-  body: `This is the distribution of cold and hot days over the last decade, and it shifts with simulated warming as you scroll. As we eestablished with finding 01, cold days are far more impactful to the grid than hot ones. Like 01, every day of the decade
+  body: `This is the distribution of cold and hot days over the last decade, and it shifts with simulated warming as you scroll. As we established with finding 01, cold days are far more impactful to the grid than hot ones. On this graph, every day of the decade
 sits in a temperature band; as Oregon warms, watch the days pour across the 58°F line from the
 high demand dirty cold side, to the low-demand, cleaner hot side. Notice as you scroll, the average of the distribution shifts 
 smoothly towards the comfort minimum, eventually surpassing it. This is not what real climate change looks like year to year, but it gives us a 
