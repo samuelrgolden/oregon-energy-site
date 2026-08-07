@@ -3,7 +3,6 @@ Climate-Driven Demand and Emissions Under 21st Century Warming Scenarios
 [Bachelor's thesis, University of Oregon, Robert D. Clark Honors College].`;
 
 const LINKS = [
-  { label: "The Bridger investigation", href: "/bridger/" },
   { label: "EIA-930 grid monitor", href: "https://www.eia.gov/electricity/gridmonitor/" },
   { label: "PRISM Climate Group", href: "https://prism.oregonstate.edu/" },
 ];

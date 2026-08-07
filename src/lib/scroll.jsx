@@ -99,15 +99,21 @@ export function PinScene({ heightVh = 300, mobileHeightVh, className = "", id, c
     setSpent(true);
   }, [progress, spent, reduced]);
 
-  // After the collapse renders, pull the viewport up by the removed height —
-  // the sticky frame lands exactly where it already was. MUST be instant:
-  // the page's scroll-behavior:smooth would otherwise animate this correction
-  // as a visible lurch.
+  // After the collapse renders, put the viewport back where the sticky frame
+  // already is — i.e. scroll so the (now viewport-tall) track sits at the top.
+  // Correct to the track's measured position rather than by the removed
+  // height: when the last scene on the page collapses, the document loses
+  // more height than remains below it, so the browser has already clamped
+  // scrollY and a blind -removedHeight would fling the reader back up the
+  // page. MUST be instant: the page's scroll-behavior:smooth would otherwise
+  // animate this correction as a visible lurch.
   useLayoutEffect(() => {
-    if (spent && pendingCollapse.current > 0) {
-      window.scrollBy({ top: -pendingCollapse.current, behavior: "instant" });
-      pendingCollapse.current = 0;
-    }
+    if (!spent || pendingCollapse.current <= 0) return;
+    pendingCollapse.current = 0;
+    const el = ref.current;
+    if (!el) return;
+    const drift = el.getBoundingClientRect().top;
+    if (drift) window.scrollBy({ top: drift, behavior: "instant" });
   }, [spent]);
 
   const done = reduced || spent;

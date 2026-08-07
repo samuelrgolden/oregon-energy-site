@@ -23,11 +23,10 @@ first effect of warming is relief — fewer cold days of heating to supply.`,
   emissions: {
     body: [
       `The same bands, now measured in carbon. Each bar is the average CO₂ a day in that
-temperature range puts on the grid — and the shape is even more lopsided than demand.
-Cold days aren't just hungrier for power. They're dirtier.`,
-      `Oregon's cold-weather electricity leans on gas and imports, while milder days draw
-more from hydro, wind, and solar. So the coldest days carry the heaviest carbon — and,
-as the strip shows, there are far more of them.`,
+temperature range puts on the grid, and the shape is even more lopsided than demand.
+Not only do cold days demand more power, they're signifigantly dirtier that hot days.`,
+      `Here, cold days tower of hot ones, because Oregon's cold-weather electricity leans on gas and imports, while milder days draw
+more from hydro, wind, and solar. So the coldest days carry the heaviest carbon impact, which means warming acts as a relief to the grid.`,
     ],
   },
 };

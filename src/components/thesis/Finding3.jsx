@@ -5,13 +5,13 @@ import { PinScene, phase, ease, useRail } from "../../lib/scroll";
 import { scaleLinear, fmtNum, useMeasure } from "../../charts/utils";
 
 const COPY = {
-  kicker: "Wait — run that again?",
-  title: "Why: watch the cold days disappear.",
-  body: `Same model, same sweep — but this time, watch the input. Every day of the decade
-sits in a temperature band; as Oregon warms, days pour across the 58°F line from the
-expensive, dirty cold side to the cheaper, cleaner hot side. One bill shrinks while
-another grows — so demand barely moves. But the days being deleted are the dirtiest
-ones the grid has — so emissions just fall.`,
+  kicker: "scroll one more time",
+  title: "Why? Watch the cold days disappear.",
+  body: `This is the distribution of cold and hot days over the last decade, and it shifts with simulated warming as you scroll. As we eestablished with finding 01, cold days are far more impactful to the grid than hot ones. Like 01, every day of the decade
+sits in a temperature band; as Oregon warms, watch the days pour across the 58°F line from the
+high demand dirty cold side, to the low-demand, cleaner hot side. Notice as you scroll, the average of the distribution shifts 
+smoothly towards the comfort minimum, eventually surpassing it. This is not what real climate change looks like year to year, but it gives us a 
+good idea of the trajectory our energy profile will follow. Real warming is unpredictable, volatile, and difficult to simulate accurately.`,
   hint: "The outline is today's distribution; the bars are the warmed one. The sweep runs to +9°F — the top of the century's hottest path above.",
 };
 
@@ -223,7 +223,7 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta 
               <h2 className="display text-[clamp(2rem,4.2vw,3.6rem)]">
                 <span className="text-[hsl(var(--accent))]">03</span> — {COPY.title}
               </h2>
-              <p className="smallcaps mt-2 text-[hsl(var(--accent))]">{COPY.kicker}</p>
+              <p className="smallcaps font-medium mt-5 text-[hsl(var(--accent))]">{COPY.kicker}</p>
 
               <div className="mt-5 grid grid-cols-12 gap-x-6 md:gap-x-10">
                 {/* left: the why — offset so it aligns with the graph card top,
@@ -263,7 +263,7 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta 
                   value={fmtNum(cold)}
                   sub="of 3,739 · was 2,304"
                   tone="text-[#60A5FA]"
-                  more="Days below 58°F, when Oregon leans hardest on electric heat. Warming pushes them toward the comfort point — and off the dirty end of the dispatch mix."
+                  more="Days below 58°F, when Oregon leans hardest on it's grid. Warming pushes them toward the comfort point — and off the dirty end of the dispatch mix."
                 />
                 <Readout
                   label="Hot-side days"
@@ -276,14 +276,14 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta 
                   label="Demand"
                   value={`${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`}
                   sub="barely moves"
-                  more="Heating relief on the cold side roughly cancels new cooling load on the hot side, so total demand nets out close to flat — the shallow U-curve."
+                  more="Heating relief on the cold side roughly cancels new cooling load on the hot side, so total demand nets out close to flat — hence the shallow U-curve in finding 02."
                 />
                 <Readout
                   label="CO₂"
                   value={`${co2Pct >= 0 ? "+" : ""}${co2Pct.toFixed(1)}%`}
                   sub="just falls"
                   tone="text-[var(--c-after)]"
-                  more="Cold days are dirtier per MWh than hot ones on this grid, so deleting them lowers emissions even while demand holds steady — the carbon-lopsided effect."
+                  more="Cold days are dirtier per MWh than hot ones on this grid, so as they diminish and turn into hot ones, emissions lower significantly. This is the carbon-lopsided effect."
                 />
               </div>
 

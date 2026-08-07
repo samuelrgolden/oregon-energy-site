@@ -8,12 +8,6 @@ export default function ThesisNav() {
           OR<span className="italic text-[hsl(var(--accent))]">/</span>grid
         </a>
         <div className="flex items-center gap-5">
-          <a
-            href="/bridger/"
-            className="link-wipe inline-block text-sm text-[hsl(var(--ink-soft))] hover:text-[hsl(var(--accent))]"
-          >
-            The investigation
-          </a>
           <ThemeToggle />
         </div>
       </nav>

@@ -4,7 +4,6 @@ import HeroScene from "./components/thesis/HeroScene";
 import Finding1 from "./components/thesis/Finding1";
 import Finding2 from "./components/thesis/Finding2";
 import Finding3 from "./components/thesis/Finding3";
-import Finding4 from "./components/thesis/Finding4";
 import MethodsStrip from "./components/thesis/MethodsStrip";
 import ThesisFooter from "./components/thesis/ThesisFooter";
 
@@ -13,7 +12,6 @@ const SECTIONS = [
   { id: "finding-1", label: "A grid that heats" },
   { id: "finding-2", label: "Turn up the temperature" },
   { id: "finding-3", label: "Why: the days migrate" },
-  { id: "finding-4", label: "The bookkeeping" },
   { id: "methods", label: "How I did it" },
 ];
 
@@ -26,7 +24,6 @@ export default function ThesisApp() {
         <Finding1 />
         <Finding2 />
         <Finding3 />
-        <Finding4 />
         <MethodsStrip />
       </main>
       <ThesisFooter />

@@ -5,26 +5,25 @@ const CARDS = [
   {
     title: "Data",
     short: "Ten years of EIA-930 hourly grid data × PRISM climate at five Oregon stations.",
-    more: `Daily PACW demand, generation, interchange, and consumption-based CO₂ (July 2015 –
-October 2025), merged with PRISM daily temperature, dew point, and precipitation extracted
-at Albany, Eugene, Bend, Portland, and Medford. Albany — inside PACW's service territory —
-is the production specification.`,
+    more: `I pulled daily PACW demand, generation, interchange, and consumption-based CO₂ (July 2015 –
+October 2025) from EIA.gov, and then merged with PRISM daily temperature, dew point, and precipitation extracted
+at Albany, Eugene, Bend, Portland, and Medford.`,
   },
   {
     title: "Model",
-    short: "OLS carries temperature so extrapolation behaves; XGBoost mops up the calendar.",
-    more: `A hybrid, two-layer design: ordinary least squares on temperature terms (mean, squared,
+    short: "A hyrbid OLS and random forest XGBoosted arcitechture.",
+    more: `I used a hybrid, two-layer design: ordinary least squares on temperature terms (mean, squared,
 heating and cooling degree days below/above a 58°F base), then an XGBoost model fit to the
 residuals using calendar and humidity features. Trees can't extrapolate beyond the data they
-saw — so the variable the warming scenarios push out of range lives in the parametric layer.`,
+saw, so the variable the warming scenarios push out of range lives in the parametric layer, allowing my hyrbid model the advantages of OlS and XGb.`,
   },
   {
     title: "Validation",
-    short: `My first R² was inflated. The honest one is ${stats.albany.demandTestR2}.`,
-    more: `A random train-test split leaked seasonal structure and flattered the emissions model.
-The production models use a chronological 80/20 split — trained on the past, tested on the
-future — giving demand test R² of ${stats.albany.demandTestR2} and emissions test R² of
-${stats.albany.co2TestR2} at Albany. Weaker-looking, and true.`,
+    short: `Chronological 80/20 test train split over the full ten years of data.`,
+    more: `Early on a random train-test split leaked seasonal structure and flattered the emissions model.
+Due to this I learned the importance of using a chronoligcal split. The production models use a chronological 80/20 split, trained on the past, tested on the
+future, giving demand test R² of ${stats.albany.demandTestR2} and emissions test R² of
+${stats.albany.co2TestR2} at Albany.`,
   },
 ];
 
