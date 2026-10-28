@@ -14,6 +14,17 @@ export function useReducedMotion() {
   return reduced;
 }
 
+/** True below the md breakpoint (phones) — scenes switch to their compact layout. */
+export function useNarrow() {
+  const [narrow, setNarrow] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const onResize = () => setNarrow(window.innerWidth < 768);
+    window.addEventListener("resize", onResize, { passive: true });
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  return narrow;
+}
+
 /**
  * Scroll progress (0..1) through a tall track element.
  * Progress is derived purely from scroll position, so any landing point
@@ -80,15 +91,9 @@ export function PinScene({ heightVh = 300, mobileHeightVh, className = "", id, c
   const ref = useRef(null);
   const reduced = useReducedMotion();
   const progress = useScrollProgress(ref);
-  const [narrow, setNarrow] = useState(() => window.innerWidth < 768);
+  const narrow = useNarrow();
   const [spent, setSpent] = useState(false);
   const pendingCollapse = useRef(0);
-
-  useEffect(() => {
-    const onResize = () => setNarrow(window.innerWidth < 768);
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
 
   // Mark spent the moment the scene completes, remembering how much track
   // height is about to disappear.
@@ -121,7 +126,9 @@ export function PinScene({ heightVh = 300, mobileHeightVh, className = "", id, c
 
   return (
     <section ref={ref} id={id} className={className} style={{ height: `${h}vh` }}>
-      <div className="sticky top-0 flex h-screen flex-col overflow-hidden">
+      {/* phones: svh = the viewport with browser toolbars showing, so the
+          bottom of a pinned frame never hides behind Safari's bar */}
+      <div className="sticky top-0 flex h-svh flex-col overflow-hidden md:h-screen">
         {children(done ? 1 : progress, done)}
       </div>
     </section>

@@ -2,6 +2,9 @@ import { fmtNum } from "./utils";
 
 /** Horizontal gridlines + y tick labels. */
 export function YAxis({ ticks, sy, x0, x1, unit }) {
+  // show decimals when the tick step is fractional (e.g. 58.2, 58.4 — not 58, 58)
+  const step = ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : 1;
+  const digits = step < 1 ? Math.min(2, Math.ceil(-Math.log10(step) - 1e-9)) : 0;
   return (
     <g aria-hidden="true">
       {ticks.map((t) => (
@@ -22,7 +25,7 @@ export function YAxis({ ticks, sy, x0, x1, unit }) {
             fontSize="11"
             fill="hsl(var(--muted))"
           >
-            {fmtNum(t)}
+            {fmtNum(t, digits)}
           </text>
         </g>
       ))}

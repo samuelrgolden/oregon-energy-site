@@ -2,7 +2,8 @@ import ThemeToggle from "./ThemeToggle";
 
 export default function ThesisNav() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
+    // phones: a frosted bar so the logo never sits on top of charts as they scroll under it
+    <header className="fixed inset-x-0 top-0 z-50 bg-[hsl(var(--paper)/0.78)] backdrop-blur-md md:bg-transparent md:backdrop-blur-none">
       <nav className="mx-auto flex max-w-[1440px] items-center justify-between px-6 py-4 md:px-12">
         <a href="#top" className="serif text-lg text-[hsl(var(--ink))]">
           OR<span className="italic text-[hsl(var(--accent))]">/</span>grid

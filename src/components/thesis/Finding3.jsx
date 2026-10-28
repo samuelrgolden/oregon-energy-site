@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import bandshift from "../../data/bandshift.json";
 import scenarios from "../../data/scenarios.json";
-import { PinScene, phase, ease, useRail } from "../../lib/scroll";
-import { scaleLinear, fmtNum, useMeasure } from "../../charts/utils";
+import { PinScene, phase, ease, useRail, useNarrow } from "../../lib/scroll";
+import { scaleLinear, fmtNum, useMeasureBox } from "../../charts/utils";
+import MobileIntro from "./MobileIntro";
 
 const COPY = {
   kicker: "scroll one more time",
@@ -15,8 +16,9 @@ good idea of the trajectory our energy profile will follow. Real warming is unpr
   hint: "The outline is today's distribution; the bars are the warmed one. The sweep runs to +9°F — the top of the century's hottest path above.",
 };
 
-const H = 310;
-const M = { top: 34, right: 20, bottom: 40, left: 16 };
+const H_DESKTOP = 310;
+const M_DESKTOP = { top: 34, right: 20, bottom: 40, left: 16 };
+const M_FILL = { top: 30, right: 12, bottom: 38, left: 14 };
 // same palette as the Finding 1 bars
 const COLD = "#3B82F6"; // blue-500
 const HOT = "#F97316"; // orange-500
@@ -32,9 +34,12 @@ function lerpAt(arr, t) {
   return arr[i] + (arr[i + 1] - arr[i]) * f;
 }
 
-function MigrationChart({ deltaT }) {
-  const [ref, width] = useMeasure();
-  const W = Math.max(width, 320);
+/** `fill` (phones): the chart takes whatever height its flex box gives it. */
+function MigrationChart({ deltaT, fill = false }) {
+  const [ref, width, boxH] = useMeasureBox();
+  const H = fill ? Math.max(boxH, 140) : H_DESKTOP;
+  const M = fill ? M_FILL : M_DESKTOP;
+  const W = Math.max(width, 260);
   const x0 = M.left;
   const x1 = W - M.right;
   const y1 = H - M.bottom;
@@ -51,11 +56,12 @@ function MigrationChart({ deltaT }) {
   const meanNow = lerpAt(meanTemp, t); // mean daily temperature, °F
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className={fill ? "relative min-h-0 flex-1 overflow-hidden" : undefined}>
       <svg
         width="100%"
         height={H}
         viewBox={`0 0 ${W} ${H}`}
+        className={fill ? "absolute inset-0" : undefined}
         role="img"
         aria-label={`Days per temperature band as Oregon warms by ${deltaT.toFixed(1)} degrees: cold-side days fall from 2,304 toward 1,452 at plus nine degrees while hot-side days rise from 1,435 toward 2,287.`}
       >
@@ -131,7 +137,7 @@ function MigrationChart({ deltaT }) {
   );
 }
 
-function Readout({ label, value, sub, tone, more }) {
+function Readout({ label, value, sub, tone, more, compact = false, alignRight = false }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -156,21 +162,40 @@ function Readout({ label, value, sub, tone, more }) {
         type="button"
         onClick={() => more && setOpen((v) => !v)}
         aria-expanded={open}
-        className={`lift-card block w-full rounded-xl border bg-[hsl(var(--surface))] px-4 py-3 text-left ${
+        className={`lift-card block w-full rounded-xl border bg-[hsl(var(--surface))] ${compact ? "px-3 py-2" : "px-4 py-3"} text-left ${
           open ? "border-[hsl(var(--accent))]" : "border-[hsl(var(--ink)/0.1)]"
         } ${more ? "cursor-pointer" : "cursor-default"}`}
       >
-        <p className="smallcaps text-[0.62rem]">{label}</p>
-        <p className={`serif mt-1 text-[1.55rem] leading-none tabular-nums ${tone ?? "text-[hsl(var(--ink))]"}`}>{value}</p>
-        {sub && <p className="mt-1 text-[0.7rem] text-[hsl(var(--muted))]">{sub}</p>}
-        {more && (
-          <p className="smallcaps mt-2 text-[0.6rem] text-[hsl(var(--accent))]">{open ? "Less −" : "More +"}</p>
+        {compact ? (
+          // phones: label and More/Less share the top row to save height
+          <>
+            <span className="flex items-baseline justify-between gap-2">
+              <span className="smallcaps whitespace-nowrap text-[0.58rem] tracking-[0.1em]">{label}</span>
+              {more && (
+                <span className="smallcaps text-[0.56rem] tracking-[0.1em] text-[hsl(var(--accent))]">{open ? "Less" : "More"}</span>
+              )}
+            </span>
+            <span className={`serif mt-1 block text-[1.35rem] leading-none tabular-nums ${tone ?? "text-[hsl(var(--ink))]"}`}>
+              {value}
+            </span>
+            {sub && <span className="mt-1 block text-[0.66rem] text-[hsl(var(--muted))]">{sub}</span>}
+          </>
+        ) : (
+          <>
+            <p className="smallcaps text-[0.62rem]">{label}</p>
+            <p className={`serif mt-1 text-[1.55rem] leading-none tabular-nums ${tone ?? "text-[hsl(var(--ink))]"}`}>{value}</p>
+            {sub && <p className="mt-1 text-[0.7rem] text-[hsl(var(--muted))]">{sub}</p>}
+            {more && (
+              <p className="smallcaps mt-2 text-[0.6rem] text-[hsl(var(--accent))]">{open ? "Less −" : "More +"}</p>
+            )}
+          </>
         )}
       </button>
 
-      {/* popover — floats above the card, out of layout flow (no shift) */}
+      {/* popover — floats above the card, out of layout flow (no shift);
+          right-column cards on phones anchor right so it stays on screen */}
       {more && open && (
-        <div className="pop-card absolute bottom-full left-0 z-30 mb-2 w-[min(20rem,80vw)] rounded-xl border border-[hsl(var(--accent)/0.4)] bg-[hsl(var(--surface))] p-4 shadow-[0_18px_44px_-16px_hsl(var(--ink)/0.5)]">
+        <div className={`pop-card absolute bottom-full ${alignRight ? "right-0" : "left-0"} z-30 mb-2 w-[min(20rem,80vw)] rounded-xl border border-[hsl(var(--accent)/0.4)] bg-[hsl(var(--surface))] p-4 shadow-[0_18px_44px_-16px_hsl(var(--ink)/0.5)]`}>
           <p className="smallcaps text-[0.6rem] text-[hsl(var(--accent))]">{label}</p>
           <p className="mt-1.5 text-[0.78rem] leading-relaxed text-[hsl(var(--ink-soft))]">{more}</p>
         </div>
@@ -182,21 +207,30 @@ function Readout({ label, value, sub, tone, more }) {
 export default function Finding3() {
   const [manual, setManual] = useState(null);
   const { setDelta: setRailDelta } = useRail();
+  const narrow = useNarrow();
   return (
-    <PinScene id="finding-3" heightVh={500} mobileHeightVh={260}>
-      {(p) => {
-        // scrub: 8%–88% of the pin drives the sweep; hold at the end
-        const scrubDelta = phase(p, 0.08, 0.88) * MAX_W;
-        const deltaT = manual ?? scrubDelta;
-        return (
-          <Finding3Inner {...{ p, scrubDelta, deltaT, manual, setManual, setRailDelta }} />
-        );
-      }}
-    </PinScene>
+    <>
+      {narrow && (
+        <MobileIntro num="03" title={COPY.title} kicker={COPY.kicker}>
+          <p className="body-copy text-[0.95rem]">{COPY.body}</p>
+          <p className="mt-3 text-[0.75rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+        </MobileIntro>
+      )}
+      <PinScene id="finding-3" heightVh={500} mobileHeightVh={260}>
+        {(p) => {
+          // scrub: 8%–88% of the pin drives the sweep; hold at the end
+          const scrubDelta = phase(p, 0.08, 0.88) * MAX_W;
+          const deltaT = manual ?? scrubDelta;
+          return (
+            <Finding3Inner {...{ p, scrubDelta, deltaT, manual, setManual, setRailDelta, narrow }} />
+          );
+        }}
+      </PinScene>
+    </>
   );
 }
 
-function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta }) {
+function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta, narrow }) {
   const alb = scenarios.cities.Albany;
   const enter = ease(phase(p, 0, 0.08));
 
@@ -216,6 +250,72 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta 
   const hot = Math.round(lerpAt(bandshift.hotDays, t));
   const demandPct = ((lerpAt(alb.demand, t) - alb.demand[0]) / alb.demand[0]) * 100;
   const co2Pct = ((lerpAt(alb.co2, t) - alb.co2[0]) / alb.co2[0]) * 100;
+
+  const cards = [
+    {
+      label: "Cold-side days",
+      value: fmtNum(cold),
+      sub: "of 3,739 · was 2,304",
+      tone: "text-[#60A5FA]",
+      more: "Days below 58°F, when Oregon leans hardest on it's grid. Warming pushes them toward the comfort point — and off the dirty end of the dispatch mix.",
+    },
+    {
+      label: "Hot-side days",
+      value: fmtNum(hot),
+      sub: "was 1,435",
+      tone: "text-[#FB923C]",
+      more: "Days above 58°F, met by a cleaner summer stack of hydro, wind and solar. Their share climbs as the cold days migrate across the line.",
+    },
+    {
+      label: "Demand",
+      value: `${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`,
+      sub: "barely moves",
+      more: "Heating relief on the cold side roughly cancels new cooling load on the hot side, so total demand nets out close to flat — hence the shallow U-curve in finding 02.",
+    },
+    {
+      label: "CO₂",
+      value: `${co2Pct >= 0 ? "+" : ""}${co2Pct.toFixed(1)}%`,
+      sub: "just falls",
+      tone: "text-[var(--c-after)]",
+      more: "Cold days are dirtier per MWh than hot ones on this grid, so as they diminish and turn into hot ones, emissions lower significantly. This is the carbon-lopsided effect.",
+    },
+  ];
+
+  // phones: heading + copy live in MobileIntro above the pin; the pinned screen
+  // is slider, chart (taking the spare height), and compact readout cards
+  if (narrow) {
+    return (
+      <div className="flex h-full flex-col px-5 pb-4 pt-[4.25rem]">
+        {/* no fade-in on phones: MobileIntro already introduced the scene, and a
+            fade would leave a blank screen as the pin arrives */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center gap-4">
+            <span className="serif w-[5.5ch] text-[1.7rem] font-medium leading-none tabular-nums text-[hsl(var(--ink))]">
+              +{deltaT.toFixed(1)}°F
+            </span>
+            <input
+              type="range"
+              min="0"
+              max={MAX_W}
+              step="0.1"
+              value={deltaT}
+              onChange={(e) => setManual(parseFloat(e.target.value))}
+              aria-label="Warming in degrees Fahrenheit"
+              className="temp-slider flex-1"
+            />
+          </div>
+          <div className="mt-3 flex min-h-0 flex-1 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-3">
+            <MigrationChart deltaT={deltaT} fill />
+          </div>
+          <div className="mt-3 grid grid-cols-2 items-start gap-2.5">
+            {cards.map((c, i) => (
+              <Readout key={c.label} {...c} compact alignRight={i % 2 === 1} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
           <div className="flex h-full items-center">
@@ -258,33 +358,9 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta 
 
               {/* cards row, full width */}
               <div className="mt-4 grid grid-cols-2 items-start gap-3 md:grid-cols-4">
-                <Readout
-                  label="Cold-side days"
-                  value={fmtNum(cold)}
-                  sub="of 3,739 · was 2,304"
-                  tone="text-[#60A5FA]"
-                  more="Days below 58°F, when Oregon leans hardest on it's grid. Warming pushes them toward the comfort point — and off the dirty end of the dispatch mix."
-                />
-                <Readout
-                  label="Hot-side days"
-                  value={fmtNum(hot)}
-                  sub="was 1,435"
-                  tone="text-[#FB923C]"
-                  more="Days above 58°F, met by a cleaner summer stack of hydro, wind and solar. Their share climbs as the cold days migrate across the line."
-                />
-                <Readout
-                  label="Demand"
-                  value={`${demandPct >= 0 ? "+" : ""}${demandPct.toFixed(1)}%`}
-                  sub="barely moves"
-                  more="Heating relief on the cold side roughly cancels new cooling load on the hot side, so total demand nets out close to flat — hence the shallow U-curve in finding 02."
-                />
-                <Readout
-                  label="CO₂"
-                  value={`${co2Pct >= 0 ? "+" : ""}${co2Pct.toFixed(1)}%`}
-                  sub="just falls"
-                  tone="text-[var(--c-after)]"
-                  more="Cold days are dirtier per MWh than hot ones on this grid, so as they diminish and turn into hot ones, emissions lower significantly. This is the carbon-lopsided effect."
-                />
+                {cards.map((c) => (
+                  <Readout key={c.label} {...c} />
+                ))}
               </div>
 
               <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">

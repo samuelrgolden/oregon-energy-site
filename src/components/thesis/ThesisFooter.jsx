@@ -22,7 +22,7 @@ export default function ThesisFooter() {
             {/* PDF link goes here once Sam exports it:
             <a href="/thesis.pdf" className="...">Download the thesis (PDF)</a> */}
           </div>
-          <div className="col-span-6 md:col-span-3">
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <p className="smallcaps mb-3">Explore</p>
             <ul className="space-y-2">
               {LINKS.map((l) => (
@@ -38,7 +38,7 @@ export default function ThesisFooter() {
               ))}
             </ul>
           </div>
-          <div className="col-span-6 md:col-span-3">
+          <div className="col-span-12 sm:col-span-6 md:col-span-3">
             <p className="smallcaps mb-3">Sam Golden</p>
             <ul className="space-y-2">
               <li>

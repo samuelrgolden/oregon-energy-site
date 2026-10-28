@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import scenarios from "../../data/scenarios.json";
-import { PinScene, phase, ease, useRail } from "../../lib/scroll";
-import { scaleLinear, niceTicks, fmtNum, useMeasure, nearestIndex } from "../../charts/utils";
+import { PinScene, phase, ease, useRail, useNarrow } from "../../lib/scroll";
+import { scaleLinear, niceTicks, fmtNum, useMeasureBox, nearestIndex } from "../../charts/utils";
 import { YAxis, Legend, TableView } from "../../charts/Frame";
+import MobileIntro from "./MobileIntro";
 
 const COPY = {
   kicker: "Finding 02",
@@ -52,14 +53,21 @@ function buildTrajectory(metric, info) {
   };
 }
 
-const H = 320;
-const M = { top: 26, right: 18, bottom: 32, left: 62 };
+const H_DESKTOP = 320;
+const M_DESKTOP = { top: 26, right: 18, bottom: 32, left: 62 };
+const M_FILL = { top: 24, right: 12, bottom: 26, left: 46 };
 
-function SSPChart({ title, unit, trajectories, year, digits, landmarks }) {
-  const [ref, width] = useMeasure();
+/**
+ * `fill` (phones): the chart takes whatever height its flex box gives it,
+ * so two charts share the pinned screen on any phone height.
+ */
+function SSPChart({ title, unit, trajectories, year, digits, landmarks, fill = false }) {
+  const [ref, width, boxH] = useMeasureBox();
   const [hover, setHover] = useState(null);
 
-  const W = Math.max(width, 280);
+  const H = fill ? Math.max(boxH, 90) : H_DESKTOP;
+  const M = fill ? M_FILL : M_DESKTOP;
+  const W = Math.max(width, 260);
   const x0 = M.left;
   const x1 = W - M.right;
   const y1 = H - M.bottom;
@@ -87,7 +95,7 @@ function SSPChart({ title, unit, trajectories, year, digits, landmarks }) {
       doneLine: line(t.central, cut),
       doneBand: band(t, cut),
     }));
-  }, [W, cut]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [W, H, cut]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -96,19 +104,27 @@ function SSPChart({ title, unit, trajectories, year, digits, landmarks }) {
     setHover(nearestIndex(YEARS, sx.invert(px)));
   };
 
-  return (
-    <div ref={ref} className="relative">
-      <p className="smallcaps mb-2">{title}</p>
-      <svg
-        width="100%"
-        height={H}
-        viewBox={`0 0 ${W} ${H}`}
-        role="img"
-        aria-label={`${title} from 2024 to 2100 under three SSP warming scenarios, with uncertainty bands.`}
-        onPointerMove={onMove}
-        onPointerLeave={() => setHover(null)}
-      >
-        <YAxis ticks={niceTicks(lo - pad, hi + pad, 4)} sy={sy} x0={x0} x1={x1} unit={unit} />
+  // phones: keep landmark labels inside the plot instead of clipping at the edge
+  const labelX = (x, label) => {
+    if (!fill) return x;
+    const half = label.length * 3.1;
+    return Math.min(Math.max(x, x0 + half), x1 - half);
+  };
+
+  const svg = (
+    <svg
+      width="100%"
+      height={H}
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label={`${title} from 2024 to 2100 under three SSP warming scenarios, with uncertainty bands.`}
+      onPointerMove={onMove}
+      onPointerDown={onMove}
+      // touch fires a leave right after every tap — keep the tapped year's readout open
+      onPointerLeave={(e) => e.pointerType !== "touch" && setHover(null)}
+      className={fill ? "absolute inset-0" : undefined}
+    >
+        <YAxis ticks={niceTicks(lo - pad, hi + pad, fill && H < 170 ? 3 : 4)} sy={sy} x0={x0} x1={x1} unit={unit} />
         {[2030, 2050, 2070, 2090].map((yr) => (
           <text key={yr} x={sx(yr)} y={y1 + 19} textAnchor="middle" fontSize="11" fill="hsl(var(--muted))" aria-hidden="true">
             {yr}
@@ -135,12 +151,18 @@ function SSPChart({ title, unit, trajectories, year, digits, landmarks }) {
               <g key={lm.label} opacity={ease(phase(cut, lm.atIdx, lm.atIdx + 6))}>
                 <circle cx={sx(YEAR0 + lm.atIdx)} cy={sy(lm.value)} r="3.5" fill={lm.color} stroke="var(--chart-surface)" strokeWidth="1.5" />
                 <text
-                  x={sx(YEAR0 + lm.atIdx)}
-                  y={sy(lm.value) + (lm.below ? 22 : -12)}
+                  x={labelX(sx(YEAR0 + lm.atIdx), lm.label)}
+                  y={
+                    fill
+                      ? Math.min(sy(lm.value) + (lm.below ? 22 : -12), y1 - 5) // stay clear of the year labels
+                      : sy(lm.value) + (lm.below ? 22 : -12)
+                  }
                   textAnchor="middle"
                   fontSize="11"
                   fontWeight="600"
                   fill={lm.color}
+                  // phones: a surface-colored halo keeps the label legible where it crosses the lines
+                  {...(fill ? { stroke: "var(--chart-surface)", strokeWidth: 3.5, paintOrder: "stroke", strokeLinejoin: "round" } : {})}
                 >
                   {lm.label}
                 </text>
@@ -150,11 +172,27 @@ function SSPChart({ title, unit, trajectories, year, digits, landmarks }) {
         {hover != null && hover <= cut && (
           <line x1={sx(YEAR0 + hover)} x2={sx(YEAR0 + hover)} y1={M.top} y2={y1} stroke="hsl(var(--ink) / 0.3)" strokeWidth="1" aria-hidden="true" />
         )}
-      </svg>
+    </svg>
+  );
+
+  return (
+    <div ref={fill ? undefined : ref} className={fill ? "relative flex min-h-0 flex-1 flex-col" : "relative"}>
+      <p className={fill ? "smallcaps mb-1 text-[0.64rem]" : "smallcaps mb-2"}>{title}</p>
+      {fill ? (
+        <div ref={ref} className="relative min-h-0 flex-1 overflow-hidden">
+          {svg}
+        </div>
+      ) : (
+        svg
+      )}
       {hover != null && hover <= cut && (
         <div
           className="chart-tooltip"
-          style={{ left: `${Math.min(Math.max((sx(YEAR0 + hover) / W) * 100, 10), 68)}%`, top: 0 }}
+          style={
+            fill
+              ? { left: "50%", transform: "translateX(-50%)", top: 0 }
+              : { left: `${Math.min(Math.max((sx(YEAR0 + hover) / W) * 100, 10), 68)}%`, top: 0 }
+          }
         >
           <div className="tt-title">{YEAR0 + hover}</div>
           {trajectories.map((t, i) => (
@@ -172,27 +210,35 @@ function SSPChart({ title, unit, trajectories, year, digits, landmarks }) {
 export default function Finding2() {
   const [manual, setManual] = useState(null);
   const { setDelta: setRailDelta } = useRail();
+  const narrow = useNarrow();
 
   const demandTraj = useMemo(() => SSP.map((s) => buildTrajectory("demand", s)), []);
   const co2Traj = useMemo(() => SSP.map((s) => buildTrajectory("co2", s)), []);
 
   return (
-    <PinScene id="finding-2" heightVh={440} mobileHeightVh={260}>
-      {(p) => {
-        const enter = ease(phase(p, 0, 0.06));
-        const scrubYear = YEAR0 + phase(p, 0.08, 0.92) * (YEAR1 - YEAR0);
-        const year = manual ?? scrubYear;
-        return (
-          <Finding2Inner
-            {...{ p, enter, scrubYear, year, manual, setManual, setRailDelta, demandTraj, co2Traj }}
-          />
-        );
-      }}
-    </PinScene>
+    <>
+      {narrow && (
+        <MobileIntro num="02" title={COPY.title}>
+          <p className="body-copy text-[0.95rem]">{COPY.body}</p>
+        </MobileIntro>
+      )}
+      <PinScene id="finding-2" heightVh={440} mobileHeightVh={260}>
+        {(p) => {
+          const enter = ease(phase(p, 0, 0.06));
+          const scrubYear = YEAR0 + phase(p, 0.08, 0.92) * (YEAR1 - YEAR0);
+          const year = manual ?? scrubYear;
+          return (
+            <Finding2Inner
+              {...{ p, enter, scrubYear, year, manual, setManual, setRailDelta, demandTraj, co2Traj, narrow }}
+            />
+          );
+        }}
+      </PinScene>
+    </>
   );
 }
 
-function Finding2Inner({ p, enter, scrubYear, year, manual, setManual, setRailDelta, demandTraj, co2Traj }) {
+function Finding2Inner({ p, enter, scrubYear, year, manual, setManual, setRailDelta, demandTraj, co2Traj, narrow }) {
   // scroll takes over from manual whenever the scrub moves
   useEffect(() => {
     if (manual != null) setManual(null);
@@ -226,6 +272,68 @@ function Finding2Inner({ p, enter, scrubYear, year, manual, setManual, setRailDe
   // the page warms as the century advances — a whisper of heat
   const frac = (year - YEAR0) / (YEAR1 - YEAR0);
   const warmBg = `color-mix(in oklab, hsl(var(--paper)), #d97940 ${frac * 7}%)`;
+
+  // phones: heading + copy live in MobileIntro above the pin; the pinned screen
+  // is year, slider, and both charts sharing the remaining height
+  if (narrow) {
+    return (
+      <div className="flex h-full flex-col px-5 pb-4 pt-[4.25rem]" style={{ background: warmBg }}>
+        {/* no fade-in on phones: MobileIntro already introduced the scene, and a
+            fade would leave a blank screen as the pin arrives */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-end justify-between gap-3">
+            <span className="serif text-[2.4rem] font-medium leading-none tabular-nums text-[hsl(var(--ink))]">
+              {Math.round(year)}
+            </span>
+            <div className="flex flex-col items-end gap-0.5 text-[0.72rem] text-[hsl(var(--ink-soft))]">
+              {SSP.map((s) => (
+                <span key={s.key} className="inline-flex items-center">
+                  <span className="swatch" style={{ background: s.color }} aria-hidden="true" />
+                  {s.key}
+                </span>
+              ))}
+            </div>
+          </div>
+          <input
+            type="range"
+            min={YEAR0}
+            max={YEAR1}
+            step="1"
+            value={year}
+            onChange={(e) => setManual(parseFloat(e.target.value))}
+            aria-label="Projection year"
+            className="temp-slider mt-3 w-full"
+          />
+          <p className="mt-1.5 text-[0.7rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+
+          <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2.5">
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-3 pb-1 pt-3">
+              <SSPChart
+                fill
+                title="Mean daily demand"
+                unit="GWh / day"
+                trajectories={demandTraj}
+                year={year}
+                digits={1}
+                landmarks={demandLandmarks}
+              />
+            </div>
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-3 pb-1 pt-3">
+              <SSPChart
+                fill
+                title="Mean daily CO₂ consumed"
+                unit="tonnes / day"
+                trajectories={co2Traj}
+                year={year}
+                digits={0}
+                landmarks={co2Landmarks}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full items-center" style={{ background: warmBg }}>

@@ -80,11 +80,15 @@ function TempBandsChart({ metric }) {
   const [hover, setHover] = useState(null);
   const mix = useTween(metric === "emissions" ? 1 : 0); // 0 = demand, 1 = emissions
 
-  const W = Math.max(width, 320);
-  const x0 = M.left;
-  const x1 = W - M.right;
-  const y1 = H - M.bottom;
-  const plotH = y1 - M.top;
+  const W = Math.max(width, 260);
+  // phones: shorter plot, slimmer gutters, sparser ticks, labels that don't collide
+  const narrow = W < 480;
+  const CH = narrow ? 300 : H;
+  const m = narrow ? { ...M, left: 44, right: 12 } : M;
+  const x0 = m.left;
+  const x1 = W - m.right;
+  const y1 = CH - m.bottom;
+  const plotH = y1 - m.top;
 
   const bands = tempbands.bands;
   const maxDays = Math.max(...bands.map((b) => b.days));
@@ -93,8 +97,8 @@ function TempBandsChart({ metric }) {
   const co2Top = Math.max(...CO2_VALS) * 1.08;
 
   const sx = scaleLinear([bands[0].lo, bands.at(-1).hi], [x0, x1]);
-  const syDemand = scaleLinear([0, demandTop], [y1, M.top]);
-  const syCo2 = scaleLinear([0, co2Top], [y1, M.top]);
+  const syDemand = scaleLinear([0, demandTop], [y1, m.top]);
+  const syCo2 = scaleLinear([0, co2Top], [y1, m.top]);
   const gap = 3;
 
   const bars = useMemo(
@@ -113,11 +117,12 @@ function TempBandsChart({ metric }) {
     <div ref={ref} className="relative">
       <svg
         width="100%"
-        height={H + STRIP_H}
-        viewBox={`0 0 ${W} ${H + STRIP_H}`}
+        height={CH + STRIP_H}
+        viewBox={`0 0 ${W} ${CH + STRIP_H}`}
         role="img"
         aria-label={`Average daily ${metric} by temperature band in Albany, with ${fmtNum(tempbands.coldDays)} days of the decade below 58 degrees versus ${fmtNum(tempbands.hotDays)} above.`}
-        onPointerLeave={() => setHover(null)}
+        // touch fires a leave right after every tap — keep the tapped band's readout open
+        onPointerLeave={(e) => e.pointerType !== "touch" && setHover(null)}
       >
        <defs>
           <filter id="barGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -147,7 +152,7 @@ function TempBandsChart({ metric }) {
         </g>
 
         {bands.map((b) =>
-          b.lo % 10 === 0 ? (
+          b.lo % (narrow ? 20 : 10) === 0 ? (
             <text key={b.lo} x={sx(b.lo)} y={y1 + 16} textAnchor="middle" fontSize="11" fill="hsl(var(--muted))" aria-hidden="true">
               {b.lo}°F
             </text>
@@ -161,7 +166,7 @@ function TempBandsChart({ metric }) {
           const h = (fracD + (fracC - fracD) * mix) * plotH;
           return (
             <g key={b.lo} onPointerEnter={() => setHover(i)}>
-              <rect x={b.x} width={b.w} y={M.top} height={plotH} fill="transparent" />
+              <rect x={b.x} width={b.w} y={m.top} height={plotH} fill="transparent" />
               <rect
                 x={b.x}
                 width={b.w}
@@ -255,10 +260,25 @@ function TempBandsChart({ metric }) {
         </g>
 
         {/* totals annotation */}
-        <text x={sx(40)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={COLD}>
+        {/* phones: anchor the totals either side of the 58°F line so they can't overlap */}
+        <text
+          x={narrow ? sx(58) - 6 : sx(40)}
+          y={y1 + 40}
+          textAnchor={narrow ? "end" : "middle"}
+          fontSize={narrow ? "10.5" : "12"}
+          fontWeight="600"
+          fill={COLD}
+        >
           {fmtNum(tempbands.coldDays)} cold-side days
         </text>
-        <text x={sx(74)} y={y1 + 40} textAnchor="middle" fontSize="12" fontWeight="600" fill={HOT}>
+        <text
+          x={narrow ? sx(58) + 6 : sx(74)}
+          y={y1 + 40}
+          textAnchor={narrow ? "start" : "middle"}
+          fontSize={narrow ? "10.5" : "12"}
+          fontWeight="600"
+          fill={HOT}
+        >
           {fmtNum(tempbands.hotDays)} hot-side
         </text>
       </svg>
@@ -266,7 +286,11 @@ function TempBandsChart({ metric }) {
       {hover != null && (
         <div
           className="chart-tooltip"
-          style={{ left: `${Math.min(Math.max(((bars[hover].x + bars[hover].w / 2) / W) * 100, 10), 72)}%`, top: 0 }}
+          style={
+            narrow
+              ? { left: "50%", transform: "translateX(-50%)", top: 0 }
+              : { left: `${Math.min(Math.max(((bars[hover].x + bars[hover].w / 2) / W) * 100, 10), 72)}%`, top: 0 }
+          }
         >
           <div className="tt-title">
             {bands[hover].lo}–{bands[hover].hi}°F days
@@ -333,12 +357,15 @@ export default function Finding1() {
                 {t}
               </p>
             ))}
-            <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+            <p className="mt-4 text-[0.8rem] text-[hsl(var(--muted))]">
+              <span className="hidden md:inline">{COPY.hint}</span>
+              <span className="md:hidden">Tap any band for exact numbers.</span>
+            </p>
           </div>
         </div>
         <div className="col-span-12 mt-6 md:col-span-8 md:mt-0">
           <div className="rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-5 md:p-7">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <p className="smallcaps text-[0.7rem] text-[hsl(var(--muted))]">
                 Average daily {metric} by temperature
               </p>
@@ -356,9 +383,11 @@ export default function Finding1() {
               ])}
             />
           </div>
-          <p className="mt-3 text-[0.85rem] leading-relaxed text-[hsl(var(--ink-soft))] md:hidden">
-            {body[0]}
-          </p>
+          {body.map((t, i) => (
+            <p key={`m-${metric}-${i}`} className="body-copy mt-3 text-[0.95rem] md:hidden">
+              {t}
+            </p>
+          ))}
         </div>
         </div>
       </div>

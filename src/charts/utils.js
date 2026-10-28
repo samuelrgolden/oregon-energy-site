@@ -16,6 +16,26 @@ export function useMeasure() {
   return [ref, width];
 }
 
+/** Width AND height via ResizeObserver, for charts that fill a flex box. Returns [ref, width, height]. */
+export function useMeasureBox() {
+  const ref = useRef(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver((entries) => {
+      for (const e of entries) {
+        const w = e.contentRect.width;
+        const h = e.contentRect.height;
+        setSize((s) => (s.w === w && s.h === h ? s : { w, h }));
+      }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, size.w, size.h];
+}
+
 /** d3-free linear scale. */
 export function scaleLinear([d0, d1], [r0, r1]) {
   const m = d1 === d0 ? 0 : (r1 - r0) / (d1 - d0);
