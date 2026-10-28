@@ -36,6 +36,18 @@ export function useMeasureBox() {
   return [ref, size.w, size.h];
 }
 
+/** While `active`, a pointerdown outside `ref` calls `onOutside` (closes a tapped tooltip). */
+export function useOutsideTap(ref, active, onOutside) {
+  useEffect(() => {
+    if (!active) return undefined;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onOutside();
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [ref, active, onOutside]);
+}
+
 /** d3-free linear scale. */
 export function scaleLinear([d0, d1], [r0, r1]) {
   const m = d1 === d0 ? 0 : (r1 - r0) / (d1 - d0);

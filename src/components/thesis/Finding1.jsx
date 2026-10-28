@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import tempbands from "../../data/tempbands.json";
-import { scaleLinear, niceTicks, fmtNum, useMeasure } from "../../charts/utils";
+import { scaleLinear, niceTicks, fmtNum, useMeasure, useOutsideTap } from "../../charts/utils";
 import { YAxis, TableView } from "../../charts/Frame";
 
 const COPY = {
@@ -78,12 +78,14 @@ const CO2_VALS = (() => {
 function TempBandsChart({ metric }) {
   const [ref, width] = useMeasure();
   const [hover, setHover] = useState(null);
+  useOutsideTap(ref, hover != null, () => setHover(null));
   const mix = useTween(metric === "emissions" ? 1 : 0); // 0 = demand, 1 = emissions
 
   const W = Math.max(width, 260);
   // phones: shorter plot, slimmer gutters, sparser ticks, labels that don't collide
   const narrow = W < 480;
-  const CH = narrow ? 300 : H;
+  const CH = narrow ? 210 : H;
+  const SH = narrow ? 84 : STRIP_H;
   const m = narrow ? { ...M, left: 44, right: 12 } : M;
   const x0 = m.left;
   const x1 = W - m.right;
@@ -117,12 +119,20 @@ function TempBandsChart({ metric }) {
     <div ref={ref} className="relative">
       <svg
         width="100%"
-        height={CH + STRIP_H}
-        viewBox={`0 0 ${W} ${CH + STRIP_H}`}
+        height={CH + SH}
+        viewBox={`0 0 ${W} ${CH + SH}`}
         role="img"
         aria-label={`Average daily ${metric} by temperature band in Albany, with ${fmtNum(tempbands.coldDays)} days of the decade below 58 degrees versus ${fmtNum(tempbands.hotDays)} above.`}
         // touch fires a leave right after every tap — keep the tapped band's readout open
         onPointerLeave={(e) => e.pointerType !== "touch" && setHover(null)}
+        // touch: tap a band to show it, tap it again (or anywhere else) to hide
+        onPointerDown={(e) => {
+          if (e.pointerType !== "touch") return;
+          const r = e.currentTarget.getBoundingClientRect();
+          const v = sx.invert(((e.clientX - r.left) / r.width) * W);
+          const i = bands.findIndex((b) => v >= b.lo && v < b.hi);
+          setHover((h) => (i < 0 || h === i ? null : i));
+        }}
       >
        <defs>
           <filter id="barGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -165,7 +175,7 @@ function TempBandsChart({ metric }) {
           const fracC = b.co2 / co2Top;
           const h = (fracD + (fracC - fracD) * mix) * plotH;
           return (
-            <g key={b.lo} onPointerEnter={() => setHover(i)}>
+            <g key={b.lo} onPointerEnter={(e) => e.pointerType !== "touch" && setHover(i)}>
               <rect x={b.x} width={b.w} y={m.top} height={plotH} fill="transparent" />
               <rect
                 x={b.x}
@@ -227,7 +237,7 @@ function TempBandsChart({ metric }) {
           x1={sx(58)}
           x2={sx(58)}
           y1={M.top - 6}
-          y2={y1 + STRIP_H - 14}
+          y2={y1 + SH - 14}
           stroke="hsl(var(--ink) / 0.5)"
           strokeWidth="1"
           strokeDasharray="4 4"
@@ -242,18 +252,18 @@ function TempBandsChart({ metric }) {
             days
           </text>
           {bars.map((b, i) => {
-            const ch = (b.days / maxDays) * (STRIP_H - 40);
+            const ch = (b.days / maxDays) * (SH - 40);
             return (
               <rect
                 key={b.lo}
                 x={b.x}
                 width={b.w}
-                y={y1 + 26 + (STRIP_H - 40) - ch}
+                y={y1 + 26 + (SH - 40) - ch}
                 height={Math.max(ch, 1)}
                 rx="2"
                 fill={b.cold ? COLD : HOT}
                 opacity={(hover == null || hover === i ? 1 : 0.45) * 0.45}
-                onPointerEnter={() => setHover(i)}
+                onPointerEnter={(e) => e.pointerType !== "touch" && setHover(i)}
               />
             );
           })}

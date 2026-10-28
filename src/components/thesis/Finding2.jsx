@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import scenarios from "../../data/scenarios.json";
 import { PinScene, phase, ease, useRail, useNarrow } from "../../lib/scroll";
-import { scaleLinear, niceTicks, fmtNum, useMeasureBox, nearestIndex } from "../../charts/utils";
+import { scaleLinear, niceTicks, fmtNum, useMeasureBox, nearestIndex, useOutsideTap } from "../../charts/utils";
 import { YAxis, Legend, TableView } from "../../charts/Frame";
 import MobileIntro from "./MobileIntro";
 
@@ -64,6 +64,7 @@ const M_FILL = { top: 24, right: 12, bottom: 26, left: 46 };
 function SSPChart({ title, unit, trajectories, year, digits, landmarks, fill = false }) {
   const [ref, width, boxH] = useMeasureBox();
   const [hover, setHover] = useState(null);
+  useOutsideTap(ref, hover != null, () => setHover(null));
 
   const H = fill ? Math.max(boxH, 90) : H_DESKTOP;
   const M = fill ? M_FILL : M_DESKTOP;
@@ -118,8 +119,15 @@ function SSPChart({ title, unit, trajectories, year, digits, landmarks, fill = f
       viewBox={`0 0 ${W} ${H}`}
       role="img"
       aria-label={`${title} from 2024 to 2100 under three SSP warming scenarios, with uncertainty bands.`}
-      onPointerMove={onMove}
-      onPointerDown={onMove}
+      onPointerMove={(e) => e.pointerType !== "touch" && onMove(e)}
+      // touch: tap a year to show it, tap it again (or anywhere else) to hide
+      onPointerDown={(e) => {
+        if (e.pointerType !== "touch") return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const px = e.clientX - rect.left;
+        const i = px < x0 || px > x1 ? null : nearestIndex(YEARS, sx.invert(px));
+        setHover((h) => (i == null || (h != null && Math.abs(h - i) <= 2) ? null : i));
+      }}
       // touch fires a leave right after every tap — keep the tapped year's readout open
       onPointerLeave={(e) => e.pointerType !== "touch" && setHover(null)}
       className={fill ? "absolute inset-0" : undefined}
@@ -176,10 +184,10 @@ function SSPChart({ title, unit, trajectories, year, digits, landmarks, fill = f
   );
 
   return (
-    <div ref={fill ? undefined : ref} className={fill ? "relative flex min-h-0 flex-1 flex-col" : "relative"}>
+    <div ref={fill ? undefined : ref} className={fill ? "relative flex min-h-0 flex-col" : "relative"}>
       <p className={fill ? "smallcaps mb-1 text-[0.64rem]" : "smallcaps mb-2"}>{title}</p>
       {fill ? (
-        <div ref={ref} className="relative min-h-0 flex-1 overflow-hidden">
+        <div ref={ref} className="relative aspect-[4/3] min-h-0 w-full overflow-hidden">
           {svg}
         </div>
       ) : (
@@ -280,8 +288,8 @@ function Finding2Inner({ p, enter, scrubYear, year, manual, setManual, setRailDe
       <div className="flex h-full flex-col px-5 pb-4 pt-[4.25rem]" style={{ background: warmBg }}>
         {/* no fade-in on phones: MobileIntro already introduced the scene, and a
             fade would leave a blank screen as the pin arrives */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-end justify-between gap-3">
+        <div className="flex min-h-0 flex-1 flex-col justify-center">
+          <div className="flex shrink-0 items-end justify-between gap-3">
             <span className="serif text-[2.4rem] font-medium leading-none tabular-nums text-[hsl(var(--ink))]">
               {Math.round(year)}
             </span>
@@ -302,12 +310,12 @@ function Finding2Inner({ p, enter, scrubYear, year, manual, setManual, setRailDe
             value={year}
             onChange={(e) => setManual(parseFloat(e.target.value))}
             aria-label="Projection year"
-            className="temp-slider mt-3 w-full"
+            className="temp-slider mt-3 w-full shrink-0"
           />
-          <p className="mt-1.5 text-[0.7rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
+          <p className="mt-1.5 shrink-0 text-[0.7rem] text-[hsl(var(--muted))]">{COPY.hint}</p>
 
-          <div className="mt-3 flex min-h-0 flex-1 flex-col gap-2.5">
-            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-3 pb-1 pt-3">
+          <div className="mt-3 flex min-h-0 flex-col gap-2.5">
+            <div className="flex min-h-0 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-3 pb-1 pt-3">
               <SSPChart
                 fill
                 title="Mean daily demand"
@@ -318,7 +326,7 @@ function Finding2Inner({ p, enter, scrubYear, year, manual, setManual, setRailDe
                 landmarks={demandLandmarks}
               />
             </div>
-            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-3 pb-1 pt-3">
+            <div className="flex min-h-0 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] px-3 pb-1 pt-3">
               <SSPChart
                 fill
                 title="Mean daily CO₂ consumed"

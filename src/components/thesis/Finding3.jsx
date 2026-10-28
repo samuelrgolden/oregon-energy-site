@@ -56,7 +56,7 @@ function MigrationChart({ deltaT, fill = false }) {
   const meanNow = lerpAt(meanTemp, t); // mean daily temperature, °F
 
   return (
-    <div ref={ref} className={fill ? "relative min-h-0 flex-1 overflow-hidden" : undefined}>
+    <div ref={ref} className={fill ? "relative aspect-[4/3] min-h-0 w-full overflow-hidden" : undefined}>
       <svg
         width="100%"
         height={H}
@@ -288,8 +288,8 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta,
       <div className="flex h-full flex-col px-5 pb-4 pt-[4.25rem]">
         {/* no fade-in on phones: MobileIntro already introduced the scene, and a
             fade would leave a blank screen as the pin arrives */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center gap-4">
+        <div className="flex min-h-0 flex-1 flex-col justify-center">
+          <div className="flex shrink-0 items-center gap-4">
             <span className="serif w-[5.5ch] text-[1.7rem] font-medium leading-none tabular-nums text-[hsl(var(--ink))]">
               +{deltaT.toFixed(1)}°F
             </span>
@@ -304,10 +304,10 @@ function Finding3Inner({ p, scrubDelta, deltaT, manual, setManual, setRailDelta,
               className="temp-slider flex-1"
             />
           </div>
-          <div className="mt-3 flex min-h-0 flex-1 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-3">
+          <div className="mt-3 flex min-h-0 flex-col rounded-2xl border border-[hsl(var(--ink)/0.1)] bg-[hsl(var(--surface))] p-3">
             <MigrationChart deltaT={deltaT} fill />
           </div>
-          <div className="mt-3 grid grid-cols-2 items-start gap-2.5">
+          <div className="mt-3 grid shrink-0 grid-cols-2 items-start gap-2.5">
             {cards.map((c, i) => (
               <Readout key={c.label} {...c} compact alignRight={i % 2 === 1} />
             ))}
